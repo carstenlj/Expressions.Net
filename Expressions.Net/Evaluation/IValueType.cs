@@ -24,6 +24,7 @@ namespace Expressions.Net.Evaluation
 		public static IValueType GetArrayType(IValueType itemType) => new ArrayType(itemType);
 		public static IValueType GetObjectType(IDictionary<string, IValueType> schema) => new ObjectType(schema);
 		public static IValueType GetAmbigousType() => AmbiguousValueType.Any;
+		public static IValueType GetAmbigousItemType() => AmbiguousValueType.T;
 		public static IValueType GetAmbigousType(params IValueType[] types) => types.Length == 1 ? types.Single() : AmbiguousValueType.CreateUnionType(types);
 	}
 

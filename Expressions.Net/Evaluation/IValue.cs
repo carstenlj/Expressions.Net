@@ -8,8 +8,6 @@ namespace Expressions.Net.Evaluation
 	{
 		IValueType Type { get; }
 		object? Data { get; }
-
-
 	}
 
 	public static class IValueExtensions
@@ -23,9 +21,9 @@ namespace Expressions.Net.Evaluation
 
 		public static bool TryGetNumberOrBooleanAsNumber(this IValue obj, [NotNullWhen(true)] out double? value)
 		{
-			if (obj.IsNumber())
-				value = obj.AsNumber();
-			else if (obj.IsBoolean())
+			if (obj.IsNumber() && !obj.IsEmpty())
+				value = obj.AsDouble();
+			else if (obj.IsBoolean() && !obj.IsEmpty())
 				value = obj.AsBoolean() ? 1d : 0d;
 			else
 				value = null;
@@ -36,7 +34,7 @@ namespace Expressions.Net.Evaluation
 		public static bool TryGetNumberOrBooleanAsBoolean(this IValue obj, [NotNullWhen(true)] out bool? value)
 		{
 			if (obj.IsNumber())
-				value = obj.AsNumber() > 0;
+				value = obj.AsDouble() > 0;
 			else if (obj.IsBoolean())
 				value = obj.AsBoolean();
 			else
@@ -48,6 +46,7 @@ namespace Expressions.Net.Evaluation
 		public static bool IsString(this IValue obj) => obj.Type.RootType == ValueRootType.String;
 		public static bool IsNumber(this IValue obj) => obj.Type.RootType == ValueRootType.Number;
 		public static bool IsBoolean(this IValue obj) => obj.Type.RootType == ValueRootType.Boolean;
+		public static bool IsDateTime(this IValue obj) => obj.Type.RootType == ValueRootType.DateTime;
 		public static bool IsTruthfulBoolean(this IValue obj) => obj.IsBoolean() && ((bool?)obj.Data) == true;
 		public static bool IsNumberOrBoolean(this IValue obj) => obj.Type.RootType == ValueRootType.Number || obj.Type.RootType == ValueRootType.Boolean;
 		public static bool IsArray(this IValue obj) => obj.Type.RootType == ValueRootType.Array;
@@ -55,8 +54,9 @@ namespace Expressions.Net.Evaluation
 
 		public static bool IsEmpty(this IValue? obj) => (obj == null || obj.Data == null || obj.Data is string str && string.IsNullOrWhiteSpace(str));
 
+		public static DateTime AsDateTime(this IValue value) => value.Data is DateTime tvalue ? tvalue : throw IncorrectTypeException(value, "datetime");
 		public static int AsInteger(this IValue value) => value.Data is double tvalue ? (int)tvalue : throw IncorrectTypeException(value, "integer");
-		public static double AsNumber(this IValue value) => value.Data is double tvalue ? tvalue : throw IncorrectTypeException(value, "double");
+		public static double AsDouble(this IValue value) => value.Data is double tvalue ? tvalue : throw IncorrectTypeException(value, "double");
 		public static string AsString(this IValue value) => value.Data is string tvalue ? tvalue : throw IncorrectTypeException(value, "string");
 		public static char AsChar(this IValue value) => value.Data is string tvalue  ? tvalue[0] : throw IncorrectTypeException(value, "char");
 		public static bool AsBoolean(this IValue value) => value.Data is bool tvalue ? tvalue : throw IncorrectTypeException(value, "bool");
@@ -65,6 +65,43 @@ namespace Expressions.Net.Evaluation
 
 		public static string AsStringOrDefault(this IValue? value, string @default) => value?.Data is string tvalue ? tvalue : @default;
 		public static int AsIntegerOrDefault(this IValue? value, int @default) => value?.Data is double tvalue ? (int)tvalue : @default;
+		public static double AsDoubleOrDefault(this IValue? value, double @default) => value?.Data is double tvalue ? tvalue : @default;
+
+		public static int ConvertToIntegerOrDefault(this IValue? value, int @default = 0) => (int)ConvertToDoubleOrDefault(value, @default);
+		public static double ConvertToDoubleOrDefault(this IValue? value, double @default = 0d)
+		{
+			if (value == null)
+				return @default;
+
+			if (value.IsNumber())
+				return value.AsInteger();
+
+			if (value.IsDateTime())
+				return (int)value.AsDateTime().Subtract(new DateTime(1970, 1, 1)).TotalDays;
+
+			if (int.TryParse(value.ToString(), out var result))
+				return result;
+
+			return @default;
+
+		}
+		public static bool ConvertToBoolOrDefault(this IValue? value, bool @default = false)
+		{
+			if (value?.IsBoolean() ?? @default)
+				return (bool?)value?.Data ?? @default;
+
+			if (value.IsNumber())
+				return value.AsDouble() > 0;
+
+			if (value.IsString() && bool.TryParse(value.ToString(), out var boolFromString))
+				return boolFromString;
+
+			if (value.IsDateTime())
+				return value.AsDateTime() != DateTime.MinValue;
+
+			return @default;
+
+		}
 
 		private static Exception IncorrectTypeException(IValue value, string targetType) => new InvalidOperationException($"Cannot retrieve the value '{value?.ToString()}' as {targetType} because its type is {value?.Data?.GetType().Name} ({value?.Type.ToString()})");
 	}

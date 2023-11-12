@@ -13,7 +13,7 @@ namespace Expressions.Net.Tokenization.ITokens
 		public int OperandCount { get; }
 		public int Precedens => 12;
 
-		public override string ToString() => $"{FunctionName}({(!TakesArguments ? string.Empty : "..")})";
+		public override string ToString() => $"{FunctionName}({(!TakesArguments ? string.Empty : "args")})";
 
 		public FunctionToken(ReadOnlySpan<char> expression, int indexFrom, int indexTo, bool isGlobalFunction)
 			: this(expression.Slice(indexFrom, indexTo - indexFrom).ToString(), indexFrom, isGlobalFunction) { }
