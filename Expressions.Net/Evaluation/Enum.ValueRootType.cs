@@ -5,6 +5,7 @@
 		String,
 		Number,
 		Boolean,
+		DateTime,
 		Array,
 		Object,
 		Invalid

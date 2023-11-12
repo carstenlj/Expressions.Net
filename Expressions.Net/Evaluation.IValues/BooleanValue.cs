@@ -2,14 +2,12 @@
 
 namespace Expressions.Net.Evaluation.IValues
 {
-	//internal sealed class BooleanValue : ValueBase
-	//{
-	//	internal BooleanValue(bool? val)
-	//		: base(BooleanType.Invariant, val) { }
-	//}
-
 	internal readonly struct BooleanValue : IValue
 	{
+		public static readonly BooleanValue Empty = new BooleanValue(null);
+		public static readonly BooleanValue False = new BooleanValue(false);
+		public static readonly BooleanValue True = new BooleanValue(true);
+
 		private readonly bool _value;
 		private readonly bool _hasValue;
 

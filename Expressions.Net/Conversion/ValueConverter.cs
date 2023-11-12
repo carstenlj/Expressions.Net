@@ -46,6 +46,16 @@ namespace Expressions.Net.Conversion
 				: Convert.ToDouble(value, Settings.FormatProvider);
 		}
 
+		public DateTime? ConvertToDateTime(object? value)
+		{
+			if (value is DateTime dateTimeValue)
+				return dateTimeValue;
+
+			return value == null
+				? (DateTime?)null
+				: DateTime.Parse(value.ToString(), null, System.Globalization.DateTimeStyles.AssumeUniversal);
+		}
+
 		public IList<IValue>? ConvertToArray(object? value, IValueType itemType)
 		{
 			var result = new List<IValue>();

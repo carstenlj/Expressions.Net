@@ -18,6 +18,7 @@ namespace Expressions.Net.Evaluation
 		public static IValueType GetStringType() => StringType.Invariant;
 		public static IValueType GetNumberType() => NumberType.Invariant;
 		public static IValueType GetBooleanType() => BooleanType.Invariant;
+		public static IValueType GetDateTimeType() => DateTimeType.Invariant;
 		public static IValueType GetAnyArrayType() => ArrayType.Any;
 		public static IValueType GetAnyObjectType() => ObjectType.Any;
 		public static IValueType GetArrayType(IValueType itemType) => new ArrayType(itemType);

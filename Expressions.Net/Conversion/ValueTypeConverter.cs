@@ -7,7 +7,7 @@ using System.Reflection.Emit;
 
 namespace Expressions.Net.Conversion
 {
-    internal sealed class ValueTypeConverter : IValueTypeConverter
+	internal sealed class ValueTypeConverter : IValueTypeConverter
 	{
 		private readonly ModuleBuilder ModuleBuilder = AssemblyBuilder
 			.DefineDynamicAssembly(new AssemblyName(Guid.NewGuid().ToString()), AssemblyBuilderAccess.Run)
@@ -23,6 +23,9 @@ namespace Expressions.Net.Conversion
 
 			if (type.Equals("boolean", StringComparison.OrdinalIgnoreCase))
 				return BooleanType.Invariant;
+
+			if (type.Equals("datetime", StringComparison.OrdinalIgnoreCase))
+				return DateTimeType.Invariant;
 
 			if (type.Equals("array<T>", StringComparison.OrdinalIgnoreCase))
 				return ArrayType.Any;
@@ -52,6 +55,9 @@ namespace Expressions.Net.Conversion
 
 			if (type.IsNumericType())
 				return NumberType.Invariant;
+
+			if (type == typeof(DateTime) || type == typeof(DateTime?))
+				return DateTimeType.Invariant;
 
 			if (type.IsEnumerable(out var itemType))
 				return new ArrayType(ConvertToValueType(itemType));

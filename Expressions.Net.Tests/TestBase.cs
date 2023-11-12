@@ -3,6 +3,7 @@ using Expressions.Net.DependencyInjection;
 using Expressions.Net.Tokenization;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using System.Globalization;
 
 namespace Expressions.Net.Tests
 {
@@ -49,12 +50,19 @@ namespace Expressions.Net.Tests
 			numArrayVar = new double[] {
 				1d, 2d, 3.5d
 			},
+			dateTimeArrayVar = new DateTime[]
+			{
+				new DateTime(2023, 1, 1),
+				new DateTime(2023, 1, 2),
+				new DateTime(2023, 1, 3)
+			},
 			objVar = new
 			{
 				id = 1337,
 				name = "Hello world",
 				success = true
-			}
+			},
+			dateVar = new DateTime(2023, 1, 1)
 		};
 	}
 }

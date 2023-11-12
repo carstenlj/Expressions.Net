@@ -1,6 +1,7 @@
 ﻿using Expressions.Net.Evaluation;
 using System;
 using System.Collections;
+using System.Globalization;
 using Xunit;
 
 namespace Expressions.Net.Tests.ExpressionFunctionTests
@@ -41,7 +42,7 @@ namespace Expressions.Net.Tests.ExpressionFunctionTests
 
 		private object[] CreateTestCase(FunctionSignature func)
 		{
-			var prefix = func.IsGlobal ? string.Empty : $"{GetTokenString(func.Args[0])}.";
+			var prefix = func.IsGlobal || !func.Args.Any() ? string.Empty : $"{GetTokenString(func.Args[0])}.";
 			var argString = func.Args.Length > 1 ? string.Join(',', func.Args.Skip(func.IsGlobal ? 0 : 1).Select(GetTokenString)) : string.Empty;
 
 
@@ -54,6 +55,7 @@ namespace Expressions.Net.Tests.ExpressionFunctionTests
 				IValueType.GetStringType(),
 				IValueType.GetNumberType(),
 				IValueType.GetBooleanType(),
+				IValueType.GetDateTimeType(),
 				IValueType.GetAnyArrayType(),
 				IValueType.GetAnyObjectType()
 			};
@@ -157,6 +159,9 @@ namespace Expressions.Net.Tests.ExpressionFunctionTests
 
 			if (type.RootType == ValueRootType.Object)
 				return "objVar";
+
+			if (type.RootType == ValueRootType.DateTime)
+				return "dateVar";
 
 			return "any";
 		}
