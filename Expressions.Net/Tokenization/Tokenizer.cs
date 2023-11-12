@@ -15,7 +15,8 @@ namespace Expressions.Net.Tokenization
 		private const char Hypen = '-';
 		private const char EnDash = '–';
 		private const char EmDash = '—';
-		private const char Minus = '−';
+		private const char Minus2 = (char)8722;
+		private const char Minus = (char)45;
 		private const char ObjAccessor = '.';
 		private const char DecimalPoint = '.';
 		private const char DecimalSep = ',';
@@ -248,9 +249,9 @@ namespace Expressions.Net.Tokenization
 			if (@char == DoubleQuoteOpening || @char == DoubleQuoteClosing)
 				return DoubleQuote;
 				
-			if (@char == Hypen || @char == EnDash || @char == EmDash)
+			if (@char == Hypen || @char == EnDash || @char == EmDash || @char == Minus2)
 				return Minus;
-
+			
 			return @char;
 		}
 	}
