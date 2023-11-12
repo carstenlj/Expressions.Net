@@ -22,13 +22,15 @@ namespace Expressions.Net.Compilation
 			FunctionsProvider = functionsProvider;
 		}
 
-		public ExpressionDelegate Compile(TokenCollectionPostfix tokens)
+		public ExpressionDelegate Compile(TokenCollectionPostfix tokens, IDictionary<string, IValueType>? schema)
 		{
+			// TODO: Create a dedicate ISchema type to ensure case invariance
+			schema = schema == null ? null : new Dictionary<string,IValueType>(schema, StringComparer.OrdinalIgnoreCase);
+
 			// Create a new type builder to hold the Exec method for this expression
 			var method = new DynamicMethod($"ExecuteExpression_{Guid.NewGuid()}", ReturnType, ArgumentTypes, true);
 			var methodIL = method.GetILGenerator();
 			var typeStack = new Stack<IValueType>();
-			var argSeperatorCount = 0;
 			var isValid = true;
 
 			// Emit the IL foreach of the post fix ordered tokens
@@ -42,24 +44,23 @@ namespace Expressions.Net.Compilation
 					{
 						if (operatorToken.Operator == Operator.ArgumentSeperator)
 						{
-							argSeperatorCount++;
+							typeStack.Push(new ArgsValueType(PopServeralInReserveOrder(typeStack, 2)));
 							continue;
 						}
 
-						isValid &= EmitFunctionToken(methodToken.FunctionName, methodToken.OperandCount, typeStack, methodIL);
+						isValid &= EmitFunctionToken(methodToken.FunctionName, operatorToken.OperandCount, methodToken.StartIndex, typeStack, methodIL);
 						continue;
 					}
 
-					if (token is FunctionToken)
+					if (token is FunctionToken functionToken)
 					{
-						isValid &= EmitFunctionToken(methodToken.FunctionName, methodToken.OperandCount + argSeperatorCount, typeStack, methodIL);
-						argSeperatorCount = 0;
+						isValid &= EmitFunctionToken(methodToken.FunctionName, functionToken.OperandCount, methodToken.StartIndex, typeStack, methodIL);
 						continue;
 					}
 
 					if (token is GetterFunctionToken getterToken)
 					{
-						// TODO: IF a schema is set, we can avoid ambigous types here
+						// TODO: Support schema for object types
 						_ = PopServeralInReserveOrder(typeStack, 1);
 						typeStack.Push(AmbiguousValueType.Any);
 						isValid &= methodIL.EmitGetterFunctionCall(getterToken);
@@ -70,7 +71,7 @@ namespace Expressions.Net.Compilation
 				}
 				else
 				{
-					isValid &= EmitNonFunctionToken(token, typeStack, methodIL);
+					isValid &= EmitNonFunctionToken(token, typeStack, schema, methodIL);
 				}
 			}
 
@@ -85,25 +86,27 @@ namespace Expressions.Net.Compilation
 			return (ExpressionDelegate)method.CreateDelegate(typeof(ExpressionDelegate));
 		}
 
-		private bool EmitFunctionToken(string functionName, int argCount, Stack<IValueType> typeStack, ILGenerator methodIL)
+		private bool EmitFunctionToken(string functionName, int operandCount, int startIdx, Stack<IValueType> typeStack, ILGenerator methodIL)
 		{
-			var argTypes = PopServeralInReserveOrder(typeStack, argCount);
+			//var argCount = (isGlobal ? 0 : 1) + (takesArguments ? 1 : 0);
+			var argTypes = PopServeralInReserveOrder(typeStack, operandCount).SelectMany(ArgsValueType.GetTypes).ToArray();
+			
 			var functionLookup = FunctionsProvider.LookupFunctionInfo(functionName, argTypes);
 
 			if (!functionLookup.Success)
-				throw new Exception($"Function '{functionName}' does not exist or no overloads exists that accepts {(string.Join(",",argTypes.Select(x => x.ToString())))} as arguments");
+				throw new Exception($"Index {startIdx}: Function '{functionName}' does not exist or no overloads exists that accepts '{(string.Join(",",argTypes.Select(x => x.ToString())))}' as arguments");
 
 			if (functionLookup.ReturnType == null)
-				throw new InvalidOperationException($"Function '{functionName}' exists but incorrectly declared (no return type)");
+				throw new InvalidOperationException($"Index {startIdx}: Function '{functionName}' exists but incorrectly declared (no return type)");
 
 			if (functionLookup.MethodInfo == null)
-				throw new InvalidOperationException($"Function '{functionName}' exists but incorrectly declared (no method info)");
+				throw new InvalidOperationException($"Index {startIdx}: Function '{functionName}' exists but incorrectly declared (no method info)");
 
 			typeStack.Push(functionLookup.ReturnType);
-			return methodIL.EmitFunctionCall(functionLookup.MethodInfo);
+			return methodIL.EmitFunctionCall(functionLookup.MethodInfo, functionLookup.NullArgCount);
 		}
 
-		private static bool EmitNonFunctionToken(IToken token, Stack<IValueType> typeStack, ILGenerator methodIL)
+		private static bool EmitNonFunctionToken(IToken token, Stack<IValueType> typeStack, IDictionary<string, IValueType>? schema, ILGenerator methodIL)
 		{
 			if (token is ConstantStringToken stringToken)
 			{
@@ -125,8 +128,15 @@ namespace Expressions.Net.Compilation
 
 			if (token is VariableToken varToken)
 			{
-				// TODO: If a schema of the variable set is available we can avoid ambigous types
-				typeStack.Push(AmbiguousValueType.Any);
+				if (schema?.TryGetValue(varToken.VariableName, out var varValueType) ?? false)
+				{
+					typeStack.Push(varValueType);
+				}
+				else
+				{
+					typeStack.Push(AmbiguousValueType.Any);
+				}
+				
 				return methodIL.EmitVariable(varToken);
 			}
 

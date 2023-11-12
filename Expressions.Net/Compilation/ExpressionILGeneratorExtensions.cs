@@ -1,5 +1,6 @@
 ﻿using Expressions.Net.Evaluation;
 using Expressions.Net.Tokenization.ITokens;
+using System;
 using System.Reflection;
 using System.Reflection.Emit;
 
@@ -31,7 +32,7 @@ namespace Expressions.Net.Compilation
 				return false;
 
 			// Push the double onto the stack
-			methodIL.Emit(OpCodes.Ldc_R8, value.AsNumber());
+			methodIL.Emit(OpCodes.Ldc_R8, value.AsDouble());
 
 			// Call NumberValue to retrieve an IValue for the loaded constant
 			methodIL.Emit(OpCodes.Call, FunctionsMethodInfo.NumberValue);
@@ -82,8 +83,14 @@ namespace Expressions.Net.Compilation
 			return true;
 		}
 
-		public static bool EmitFunctionCall(this ILGenerator methodIL, MethodInfo methodInfo)
+		public static bool EmitFunctionCall(this ILGenerator methodIL, MethodInfo methodInfo, int nullArgsToPush = 0)
 		{
+			// Push null args onto the stack, to match the signature of methods with optional parameters
+			for (int i = 0; i < nullArgsToPush; i++)
+			{
+				methodIL.Emit(OpCodes.Ldnull);
+			}
+
 			// Push the result onto the stack
 			methodIL.Emit(OpCodes.Call, methodInfo);
 

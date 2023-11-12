@@ -21,9 +21,9 @@ namespace Expressions.Net
 			ValueConverter = valueConverter;
 		}
 
-		public ExpressionDelegate CreateDelegate(string expression)
+		public ExpressionDelegate CreateDelegate(string expression, IDictionary<string,IValueType>? schema = null)
 		{
-			return ExpressionCompiler.Compile(ExpressionTokenizer.TokenizeToPostfix(expression));
+			return ExpressionCompiler.Compile(ExpressionTokenizer.TokenizeToPostfix(expression), schema);
 		}
 
 		public IVariables CreateVariables(object? data, IDictionary<string, IValueType>? schema)

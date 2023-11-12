@@ -6,7 +6,7 @@ namespace Expressions.Net
 {
 	public interface IExpressionFactory
 	{
-		ExpressionDelegate CreateDelegate(string expression);
+		ExpressionDelegate CreateDelegate(string expression, IDictionary<string, IValueType>? schema = null);
 		IVariables CreateVariables(object? values, IDictionary<string, IValueType>? schema);
 	}
 

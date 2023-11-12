@@ -1,8 +1,5 @@
 ﻿using Expressions.Net.Evaluation;
-using System;
 using System.Collections;
-using System.Globalization;
-using Xunit;
 
 namespace Expressions.Net.Tests.ExpressionFunctionTests
 {
@@ -11,124 +8,84 @@ namespace Expressions.Net.Tests.ExpressionFunctionTests
 	/// </summary>
 	internal class ExpressionFunctionTestSource : IEnumerable<object[]>
 	{
+		public record TestCase(string Expression, IValueType Returns);
+
 		IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 		public IEnumerator<object[]> GetEnumerator()
 		{
-			var tests = GetDistinctiveTestScenarios().Select(CreateTestCase).ToList();
-			foreach (var test in tests)
+			foreach (var testCase in FunctionsProvider.FunctionsCache
+				.SelectMany(x => x.Value.Signatures)
+				.SelectMany(GetAllTestCasesForSignature)
+				.Select(x => new object[] { x.Expression, x.Returns.ToString() }))
 			{
-				yield return test;
+				yield return testCase;
 			}
 		}
 
-		private static IList<FunctionSignature> GetDistinctiveTestScenarios()
+		public static IEnumerable<TestCase> GetAllTestCasesForSignature(FunctionSignature signature)
 		{
-			var result = new Dictionary<string, List<FunctionSignature>>();
-			foreach (var item in FunctionsProvider.FunctionsCache)
+			if (signature.Name == "Switch" || signature.Name == "Switch1")
+				yield break;
+
+			var argCombinations = GetDistinctiveArgCombinations(signature, 0);
+
+			foreach (var combination in argCombinations)
 			{
-				var allOverloads = item.Value.Overloads.SelectMany(x => x.Value).ToArray();
-				var allDistinctOverloads = new List<FunctionSignature>();
-				result.Add(item.Key, allDistinctOverloads);
-
-				foreach (var functionSignature in allOverloads)
+				if (combination.Any(x => x.IsAnyArrayItem() || x.IsAnyArray()))
 				{
-					allDistinctOverloads.AddRange(GetDistinctiveSignatures(functionSignature));
-				}
-
-			}
-
-			return result.SelectMany(x => x.Value).ToList();
-		}
-
-		private object[] CreateTestCase(FunctionSignature func)
-		{
-			var prefix = func.IsGlobal || !func.Args.Any() ? string.Empty : $"{GetTokenString(func.Args[0])}.";
-			var argString = func.Args.Length > 1 ? string.Join(',', func.Args.Skip(func.IsGlobal ? 0 : 1).Select(GetTokenString)) : string.Empty;
-
-
-			return new object[] { $"{prefix}{func.Name}({argString})", func.ReturnType };
-		}
-
-		private static IEnumerable<FunctionSignature> GetDistinctiveSignatures(FunctionSignature functionSignature)
-		{
-			var anySubstitutions = new IValueType[] {
-				IValueType.GetStringType(),
-				IValueType.GetNumberType(),
-				IValueType.GetBooleanType(),
-				IValueType.GetDateTimeType(),
-				IValueType.GetAnyArrayType(),
-				IValueType.GetAnyObjectType()
-			};
-
-			var arraySubstitutions = new IValueType[] {
-				IValueType.GetArrayType(IValueType.GetStringType()),
-				IValueType.GetArrayType(IValueType.GetNumberType()),
-				IValueType.GetArrayType(IValueType.GetBooleanType()),
-				//IValueType.GetArrayType(IValueType.GetArrayType(IValueType.GetAnyObjectType())),
-				IValueType.GetArrayType(IValueType.GetAnyObjectType())
-			};
-
-			var args = CreateDistinctiveArgPermutations(functionSignature.Args, "any", anySubstitutions);
-
-			foreach (var sig1 in args)
-			{
-				if (sig1.Any(x => x.IsAnyArray()))
-				{
-					foreach (var arrayType in arraySubstitutions)
+					foreach (var testCase in CreateArrayTestCases(signature, combination))
 					{
-						yield return new FunctionSignature
-						{
-							Name = functionSignature.Name,
-							Args = sig1.Select(x => x.SubstituteT(arrayType)).ToArray(),
-							ReturnType = functionSignature.ReturnType.SubstituteT(arrayType)
-						};
+						yield return testCase;
 					}
 				}
 				else
 				{
-					yield return new FunctionSignature
-					{
-						Name = functionSignature.Name,
-						Args = sig1,
-						ReturnType = functionSignature.ReturnType
-					};
+					yield return CreateTestCase(signature.Name, signature.IsGlobal, combination, signature.ReturnType);
 				}
 			}
+
 		}
 
-		private static List<IValueType[]> CreateDistinctiveArgPermutations(IEnumerable<IValueType> inputArgs, string substitute, IValueType[] availableSubstitutions)
+		private static IEnumerable<TestCase> CreateArrayTestCases(FunctionSignature signature, IEnumerable<IValueType> args)
 		{
-			var result = new List<IValueType[]>();
-			var substituteCount = inputArgs.Count(item => item.ToString().Equals(substitute, StringComparison.OrdinalIgnoreCase));
-			var combinations = (int)Math.Pow(availableSubstitutions.Length, substituteCount);
+			var testCases = new List<TestCase>();
+			var arrayItemTypes = new IValueType[] {
+				IValueType.GetStringType(),
+				IValueType.GetNumberType(),
+				IValueType.GetBooleanType(),
+				IValueType.GetDateTimeType(),
+				IValueType.GetAnyObjectType()
+			};
 
-			for (var i = 0; i < combinations; i++)
+			foreach (var arrayItemType in arrayItemTypes)
 			{
-				var currentCombination = new List<IValueType>();
-				var anyIndex = 0;
-				for (var j = 0; j < inputArgs.Count(); j++)
-				{
-					var inputArg = inputArgs.ElementAt(j);
-					if (!inputArg.ToString().Equals(substitute, StringComparison.OrdinalIgnoreCase))
-					{
-						currentCombination.Add(inputArg);
-					}
-					else
-					{
-						var valueIndex = (i / (int)Math.Pow(availableSubstitutions.Length, anyIndex)) % availableSubstitutions.Length;
-						var valueType = availableSubstitutions[valueIndex];
-						currentCombination.Add(valueType);
-						anyIndex++;
-					}
-				}
-
-				result.Add(currentCombination.ToArray());
+				testCases.Add(CreateTestCase(signature.Name, signature.IsGlobal, ReplaceTValueTypes(arrayItemType, args), signature.ReturnType.IsAnyArrayItem() ? arrayItemType : signature.ReturnType));
 			}
 
-			return result;
+			return testCases;
 		}
 
-		private string GetTokenString(IValueType type)
+		private static IEnumerable<IValueType> ReplaceTValueTypes(IValueType nonAmbigousType, IEnumerable<IValueType> args)
+		{
+			foreach (var arg in args)
+			{
+				if (arg.IsAnyArray())
+					yield return IValueType.GetArrayType(nonAmbigousType);
+				else if (arg.IsAnyArrayItem())
+					yield return nonAmbigousType;
+				else
+					yield return arg;
+			}
+		}
+
+		public static TestCase CreateTestCase(string functionName, bool isGlobal, IEnumerable<IValueType> args, IValueType returnType)
+		{
+			return isGlobal
+				? new TestCase($"{functionName}({string.Join(", ", args.Select(GetTokenString))})", returnType)
+				: new TestCase($"{GetTokenString(args.First())}.{functionName}({string.Join(", ", args.Skip(1).Select(GetTokenString))})", returnType);
+		}
+
+		private static string GetTokenString(IValueType type)
 		{
 			if (type.RootType == ValueRootType.String)
 				return $@"""myValue""";
@@ -151,11 +108,13 @@ namespace Expressions.Net.Tests.ExpressionFunctionTests
 						return "boolArrayVar";
 					if (arrayItemType.RootType == ValueRootType.Object)
 						return "objArrayVar";
+					if (arrayItemType.RootType == ValueRootType.DateTime)
+						return "dateTimeArrayVar";
 
 					throw new NotSupportedException($"Test cases with arrays of type '{arrayItemType}' is not supported");
 				}
 			}
-				
+
 
 			if (type.RootType == ValueRootType.Object)
 				return "objVar";
@@ -166,6 +125,68 @@ namespace Expressions.Net.Tests.ExpressionFunctionTests
 			return "any";
 		}
 
+		public static List<List<IValueType>> GetDistinctiveArgCombinations(FunctionSignature signature, int currentIndex = 0)
+		{
+			var result = new List<List<IValueType>>();
+
+			if (currentIndex == signature.Args.Length)
+			{
+				result.Add(new List<IValueType>());
+				return result;
+			}
+
+			var combinationsFromNextIndex = GetDistinctiveArgCombinations(signature, currentIndex + 1);
+			var types = GetPossibleTypes(signature.Args[currentIndex]);
+			foreach (var arrayElement in types)
+			{
+				foreach (var combination in combinationsFromNextIndex)
+				{
+					var currentCombination = new List<IValueType> { arrayElement }.Concat(combination).ToList();
+					result.Add(currentCombination);
+				}
+			}
+
+			return result;
+		}
+
+		public static IEnumerable<IValueType> GetPossibleTypes(IValueType valueType)
+		{
+			var types = valueType.GetPossibleTypes() ?? new IValueType[] { valueType.IsAnyArrayItem() ? IValueType.GetAmbigousItemType() : IValueType.GetAmbigousType() };
+			var result = new List<IValueType>();
+
+			foreach (var type in types)
+			{
+				if (type.IsAnyArrayItem())
+				{
+					result.Add(IValueType.GetAmbigousItemType());
+				}
+				else if (type.IsAny())
+				{
+					result.AddRange(new IValueType[] {
+				IValueType.GetStringType(),
+				IValueType.GetNumberType(),
+				IValueType.GetBooleanType(),
+				IValueType.GetDateTimeType(),
+				IValueType.GetAnyArrayType(),
+				IValueType.GetAnyObjectType()
+			});
+				}
+				else if (type.IsAnyArray())
+				{
+					result.Add(IValueType.GetAnyArrayType());
+				}
+				else
+				{
+					result.Add(type);
+				}
+			}
+
+			return result.Distinct();
+		}
+
+
+
+
 	}
 
 	internal static class IValueTypeExtensions
@@ -173,17 +194,6 @@ namespace Expressions.Net.Tests.ExpressionFunctionTests
 		public static bool IsAny(this IValueType type) => type.ToString() == "any";
 		public static bool IsAnyArray(this IValueType type) => type.ToString() == "array<T>";
 		public static bool IsAnyArrayItem(this IValueType type) => type.ToString() == "T";
-
-		public static IValueType SubstituteT(this IValueType type, IValueType substituteArrayType)
-		{
-			if (type.IsAnyArray())
-				return substituteArrayType;
-
-			if (type.IsAnyArrayItem())
-				return substituteArrayType.TryGetArrayItemType(out var substituteItemType) ? substituteItemType : type;
-
-			return type;
-		}
-
 	}
+
 }

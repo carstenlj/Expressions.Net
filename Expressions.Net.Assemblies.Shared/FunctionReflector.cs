@@ -1,7 +1,6 @@
-﻿using System.Reflection;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.Reflection;
 
 namespace Expressions.Net.Assemblies
 {
@@ -9,41 +8,39 @@ namespace Expressions.Net.Assemblies
 	{
 		public static void PupulateCacheWith(Type typeContainingFunctions, Dictionary<string, FunctionGroupDescriptor> cache)
 		{
-			var methods = typeContainingFunctions.GetMethods();
-			foreach (var methodInfo in methods)
+			foreach (var methodInfo in typeContainingFunctions.GetMethods())
 			{
-				var functionsAttr = methodInfo.GetCustomAttributes<ExpressionFunctionAttribute>().ToList();
-
-				foreach (var funcAttr in functionsAttr)
+				foreach (var functionDescriptor in GetFunctionDescriptors(methodInfo))
 				{
-					var expressionFuncs = FunctionDescriptor.Parse(funcAttr.Signature);
-					foreach (var expressionFunc in expressionFuncs)
-					{
-						if (!cache.TryGetValue(expressionFunc.Alias, out var functionInfo))
-						{
-							functionInfo = new FunctionGroupDescriptor { Name = expressionFunc.Alias, MethodInfo = methodInfo, IsGlobal = expressionFunc.IsGlobal };
-							cache.Add(expressionFunc.Alias, functionInfo);
-						}
-
-						if (functionInfo.MethodInfo != methodInfo)
-							throw new InvalidOperationException($"Cannot declare diffrent methods with the same function alias '{expressionFunc.Alias}'");
-
-						var argCount = expressionFunc.Args.Count();
-						if (!functionInfo.Overloads.TryGetValue(argCount, out var overloads))
-						{
-							overloads = new List<FunctionSignatureDescriptor>();
-							functionInfo.Overloads.Add(argCount, overloads);
-						}
-
-						overloads.Add(new FunctionSignatureDescriptor {
-							Name = expressionFunc.Alias,
-							IsGlobal = expressionFunc.IsGlobal,
-							Args = expressionFunc.Args,
-							ReturnType = expressionFunc.ReturnType
-						});
-					}
+					PopulateCacheWith(functionDescriptor, methodInfo, cache);
 				}
 			}
+		}
+
+		internal static void PopulateCacheWith(FunctionDescriptor functionDescriptor, MethodInfo methodInfo, Dictionary<string, FunctionGroupDescriptor> cache)
+		{
+			if (!cache.TryGetValue(functionDescriptor.Alias, out var functionGroup))
+			{
+				functionGroup = new FunctionGroupDescriptor(functionDescriptor.Alias, methodInfo);
+				cache.Add(functionDescriptor.Alias, functionGroup);
+			}
+
+			if (functionGroup.MethodInfo != methodInfo)
+				throw new InvalidOperationException($"Cannot declare diffrent methods with the same function alias '{functionDescriptor.Alias}'");
+
+			functionGroup.Signatures.Add(new FunctionSignatureDescriptor (
+				name: functionDescriptor.Alias,
+				isGlobal: functionDescriptor.IsGlobal,
+				args: functionDescriptor.Args,
+				requiredArgsCount: functionDescriptor.RequiredArgsCount,
+				returnType: functionDescriptor.ReturnType
+			));
+		}
+
+		internal static IEnumerable<FunctionDescriptor> GetFunctionDescriptors(MethodInfo methodInfo)
+		{
+			foreach (var funcAttr in methodInfo.GetCustomAttributes<ExpressionFunctionAttribute>())
+				yield return FunctionDescriptor.Parse(funcAttr.Signature);
 		}
 
 

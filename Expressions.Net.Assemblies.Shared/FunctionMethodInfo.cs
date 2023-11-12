@@ -7,7 +7,12 @@ namespace Expressions.Net.Assemblies
 	{
 		public string Name { get; set; }
 		public MethodInfo MethodInfo { get; set; }
-		public bool IsGlobal { get; set; }
-		public Dictionary<int, List<FunctionSignatureDescriptor>> Overloads { get; set; } = new Dictionary<int, List<FunctionSignatureDescriptor>>();
+		public IList<FunctionSignatureDescriptor> Signatures { get; set; } = new List<FunctionSignatureDescriptor>();
+
+		public FunctionGroupDescriptor(string name, MethodInfo methodInfo)
+		{
+			Name = name;
+			MethodInfo = methodInfo;
+		}
 	}
 }

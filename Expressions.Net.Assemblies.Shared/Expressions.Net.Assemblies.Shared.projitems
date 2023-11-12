@@ -12,7 +12,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)ExpressionFunctionAttribute.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)FunctionDescriptor.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)FunctionReflector.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)FunctionGroupDescriptor.cs" />
+    <Compile Include="..\Expressions.Net.Assemblies.Shared\FunctionMethodInfo.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)FunctionSignatureDescriptor.cs" />
   </ItemGroup>
 </Project>

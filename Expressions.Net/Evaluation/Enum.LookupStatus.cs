@@ -5,7 +5,6 @@
 		ExistsSingle,
 		ExistAmbigous,
 		FunctionDoesNotExist,
-		FunctionDoesNotSupportArgCount,
-		FunctionDoesNotSupportArgTypes
+		FunctionDoesNotSupportArgs
 	}
 }

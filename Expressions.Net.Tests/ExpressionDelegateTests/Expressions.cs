@@ -8,12 +8,11 @@ namespace Expressions.Net.Tests
 	{
 
 		[InlineData("1 + 2 * 3", 7d)]
-		[InlineData("('Hello' + ' ' + 'world').Length() / 2", 5.5d, Skip = "Fails because '+' operator is tied up to the 'Add' method and string uses 'Concat'")]
+		[InlineData("('Hello' + ' ' + 'world').Length() / 2", 5.5d)] 
 		[InlineData("item.name", "yolo max")]
 		[InlineData("item.name.Length()", 8d)]
 		[InlineData("!!item.success", true)]
 		[InlineData("traits.Length()", 2d)]
-
 		[Theory(DisplayName = "Can compile and evaluate to expected result ")]
 		public void TestExpressionWithExprectedResult(string expr, object? expected)
 		{

@@ -2,6 +2,7 @@
 using Expressions.Net.Evaluation.IValueTypes;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 
@@ -15,6 +16,8 @@ namespace Expressions.Net.Conversion
 
 		public static IValueType ConvertToValueType(string type)
 		{
+			type = type.TrimEnd('?');
+
 			if (type.Equals("string", StringComparison.OrdinalIgnoreCase))
 				return StringType.Invariant;
 
@@ -38,6 +41,10 @@ namespace Expressions.Net.Conversion
 
 			if (type.Equals("T", StringComparison.OrdinalIgnoreCase))
 				return AmbiguousValueType.T;
+
+			var multiTypes = type.Split('|', StringSplitOptions.RemoveEmptyEntries).Select(ConvertToValueType);
+			if (multiTypes.Any())
+				return AmbiguousValueType.CreateUnionType(multiTypes.ToArray());
 
 			throw new NotSupportedException($"There's no conversion between the string '{type}' and an IValueType");
 		}

@@ -5,9 +5,20 @@
 	/// </summary>
 	public sealed class FunctionSignatureDescriptor
 	{
-		public string Name { get; set; }
-		public bool IsGlobal { get; set; }
-		public string[] Args { get; set; }
-		public string ReturnType { get; set; }
+		public string Name { get;  }
+		public bool IsGlobal { get; }
+		public string[] Args { get; }
+		public int RequiredArgsCount { get;  }
+		public string ReturnType { get;  }
+
+		public FunctionSignatureDescriptor(string name, bool isGlobal, string[] args, int requiredArgsCount, string returnType)
+
+		{
+			Name = name;
+			IsGlobal = isGlobal;
+			Args = args;
+			RequiredArgsCount = requiredArgsCount;
+			ReturnType = returnType;
+		}
 	}
 }
