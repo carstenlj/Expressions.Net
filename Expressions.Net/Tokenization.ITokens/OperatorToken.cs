@@ -3,20 +3,18 @@
 	internal sealed class OperatorToken : IOperatorToken
 	{
 		public Operator Operator { get; }
-		public string Text { get; }
 		public int StartIndex { get; }
-		public int OperandCount { get; }
-		public string FunctionName => Operator.Function;
+		public string Text => Operator.ToString();
 		public int Precedens => Operator.Precedens;
+		public int OperandCount => Operator.OperandCount;
+		public string FunctionName => Operator.ToString();
 
 		public override string ToString() => Operator.ToString();
 
 		public OperatorToken(Operator @operator, int index)
 		{
-			Text = @operator.ToString();
 			StartIndex = index;
 			Operator = @operator;
-			OperandCount = @operator.Char0 == '!' && !@operator.Char1.HasValue ? 1 : 2;
 		}
 
 		public bool HasHigherPrecedensThan(IOperatorToken token)

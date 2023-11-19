@@ -6,21 +6,20 @@ using System.Linq;
 
 namespace Expressions.Net.Tokenization.ITokens
 {
-	internal sealed class ConstantStringToken : IConstantToken
+	public sealed class ConstantStringToken : IConstantToken
 	{
-		public ConstantTokenType Type => ConstantTokenType.String;
 		public string Text { get; }
 		public string EscapedText { get; }
 		public int StartIndex { get; }
 
-		public ConstantStringToken(ReadOnlySpan<char> expression, int index, int length, int[]? escapedIndices)
+		public ConstantStringToken(ReadOnlySpan<char> expression, int index, int length, int[]? escapedIndices = null, Func<char,char>? charNormalizer = null)
 		{
 			Text = expression.Slice(index, length).ToString();
 			StartIndex = index;
-			EscapedText = GetEscapedString(expression, index, length, escapedIndices);
+			EscapedText = GetEscapedString(expression, index, length, escapedIndices, charNormalizer);
 		}
 
-		public static string GetEscapedString(ReadOnlySpan<char> expression, int index, int length, int[]? escapedIndices)
+		public static string GetEscapedString(ReadOnlySpan<char> expression, int index, int length, int[]? escapedIndices = null, Func<char, char>? normalizer = null)
 		{
 			var valueArray = new char[length - 2 - (escapedIndices?.Length ?? 0)];
 			index++;
@@ -29,7 +28,7 @@ namespace Expressions.Net.Tokenization.ITokens
 				if (escapedIndices?.Contains(index) ?? false)
 					index++;
 
-				valueArray[i] = expression[index];
+				valueArray[i] = normalizer?.Invoke(expression[index]) ?? expression[index];
 				index++;
 			}
 

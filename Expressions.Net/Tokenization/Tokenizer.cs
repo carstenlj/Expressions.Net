@@ -7,40 +7,55 @@ namespace Expressions.Net.Tokenization
 {
 	internal sealed class Tokenizer : IExpressionTokenizer
 	{
-		private const char EscapeChar = '\\';
-		private const char SingleQuote = '\'';
-		private const char DoubleQuote = '"';
-		private const char DoubleQuoteOpening = '“';
-		private const char DoubleQuoteClosing = '”';
-		private const char Hypen = '-';
-		private const char EnDash = '–';
-		private const char EmDash = '—';
-		private const char Minus2 = (char)8722;
-		private const char Minus = (char)45;
-		private const char ObjAccessor = '.';
-		private const char DecimalPoint = '.';
-		private const char DecimalSep = ',';
-		private const string True = "true";
-		private const string False = "false";
+		internal const char Backslash = '\\';
+		internal const char SingleQuote = '\'';
+		internal const char SingleQuoteLeft = (char)8216;
+		internal const char SingleQuoteRight = (char)8217;
+		internal const char DoubleQuote = '"';
+		internal const char DoubleQuoteOpening = '“';
+		internal const char DoubleQuoteClosing = '”';
+		internal const char Underscore = '_';
+		internal const char Hypen = '-';
+		internal const char EnDash = '–';
+		internal const char EmDash = '—';
+		internal const char Minus2 = (char)8722;
+		internal const char Minus = (char)45;
+		internal const char Plus = '+';
+		internal const char ObjAccessor = '.';
+		internal const char DecimalPoint = '.';
+		internal const char DecimalSep = ',';
+		internal const string True = "true";
+		internal const string False = "false";
+
+
+		private readonly IStringTokenizer _stringTokenizer;
+
+		public Tokenizer(IStringTokenizer stringTokenizer)
+		{
+			_stringTokenizer = stringTokenizer;
+		}
 
 		public TokenCollectionInfix Tokenize(ReadOnlySpan<char> expression)
 		{
 			var result = new HashSet<IToken>();
+			var previousTokenWasOperator = false;
 			var cursor = 0;
+
 			while (cursor < expression.Length)
 			{
-				var token = ParseNextToken(expression, cursor);
+				var token = ParseNextToken(expression, cursor, previousTokenWasOperator);
 				if (token == null)
 					break;
 
 				result.Add(token);
+				previousTokenWasOperator = token is OperatorToken operatorToken && !operatorToken.IsEndParenthesis();
 				cursor = token.StartIndex + token.Text.Length;
 			}
 
 			return new TokenCollectionInfix(result.ToList());
 		}
 
-		private static IToken? ParseNextToken(ReadOnlySpan<char> expression, int cursor)
+		private IToken? ParseNextToken(ReadOnlySpan<char> expression, int cursor, bool previousTokenWasOperator)
 		{
 			// The current character assumed to be the beginning of a new token
 			var @char = NormalizeCharacter(expression[cursor]);
@@ -51,7 +66,7 @@ namespace Expressions.Net.Tokenization
 
 			// Handle string tokens
 			if (@char == DoubleQuote || @char == SingleQuote)
-				return ParseQuotedStringToken(expression, cursor, cursor, @char);
+				return _stringTokenizer.ParseQuotedStringToken(expression, cursor, @char);
 
 			var startIndex = cursor;
 
@@ -70,6 +85,20 @@ namespace Expressions.Net.Tokenization
 				var tempCursor = cursor;
 				while (tempCursor < expression.Length && char.IsWhiteSpace(@char = expression[tempCursor++]))
 					continue;
+
+				// NOTE: At this point @char will be the next readable character not included in the current tokenText
+
+				// TODO: 
+				// We're currently materializing the tokenText here. Consider if it is worth delaying.
+				// Although it should be kept in mind that the constructors of the Function, Variable and Constant token will materialize
+				// In order to truly gain the full benefit from avoiding materializing here, all the token constructor should be changed to not do so themselves.
+				var tokenText = expression.Slice(startIndex, cursor - startIndex).Trim().ToString();
+
+				// TODO: All keywords (non-method and non-variable symbols) should be resolved centrally.
+				// Here we simply do a lookup to determine if the token text represents a registered keyword, and then return the keyword token
+				// Handle boolean constants
+				if (tokenText.Equals(True, StringComparison.InvariantCultureIgnoreCase) || tokenText.Equals(False, StringComparison.InvariantCultureIgnoreCase))
+					return new ConstantBooleanToken(tokenText, startIndex);
 
 				// Handle global functions
 				if (@char == Operator.ParenthesisBegin.Char0)
@@ -93,11 +122,12 @@ namespace Expressions.Net.Tokenization
 					return new OperatorToken(Operator.Or2, startIndex);
 
 				// Return as a variable token
-				return new VariableToken(token, startIndex, null);
+				return new VariableToken(tokenText, startIndex, null);
 			}
 
 			// Check for numeric sequences
-			if (IsNumberCharacter(@char))
+			// TODO: A  number sequence should only be able to start  with a single sign
+			if (IsNumberCharacter(@char, previousTokenWasOperator))
 			{
 				var hasDecimalSep = false;
 				while (++cursor < expression.Length && IsNumericCharacter(expression[cursor], DecimalPoint, DecimalSep, ref hasDecimalSep))
@@ -106,6 +136,15 @@ namespace Expressions.Net.Tokenization
 				// Handle that last character being an seperator
 				if (cursor - 1 < expression.Length && (expression[cursor - 1] == DecimalPoint || expression[cursor - 1] == DecimalSep))
 					cursor--;
+
+				if (cursor - startIndex == 1)
+				{
+					if (@char == Plus)
+						return new OperatorToken(Operator.Add, startIndex);
+
+					if (@char == Minus)
+						return new OperatorToken(Operator.Subtract, startIndex);
+				}
 
 				return new ConstantNumberToken(expression, startIndex, cursor - startIndex);
 			}
@@ -167,55 +206,9 @@ namespace Expressions.Net.Tokenization
 				: new FunctionToken(expression.Slice(startIndex, cursor - startIndex).ToString(), startIndex, false);
 		}
 
-		private static ConstantStringToken ParseQuotedStringToken(ReadOnlySpan<char> expression, int cursorStart, int cursor, char @char)
+		private static bool IsNumberCharacter(char @char, bool includeSigns = false)
 		{
-			var quoteChar = @char;
-			var isEscaping = false;
-			var escapedIndices = null as HashSet<int>;
-
-			while (++cursor < expression.Length)
-			{
-				@char = NormalizeCharacter(expression[cursor]);
-
-				// Check if we're currently escaping a character
-				if (isEscaping)
-				{
-					// Reset state for next iteration as we'll no longer be escaping
-					isEscaping = false;
-
-					// If the current character is eliglble for being escaped, then continue on
-					if (@char == EscapeChar || @char == quoteChar)
-						continue;
-
-					// If the current character is not eligble for being escpaed, discard the escape character
-					escapedIndices?.Remove(cursor - 1);
-
-					// TODO: Should be a setting?
-					//throw new NotSupportedException($"Invalid escape sequence '{EscapeChar}{@char}'");
-				}
-
-				// Check if we should be escaping the next character
-				if (@char == EscapeChar)
-				{
-					isEscaping = true;
-
-					// Add the cursor to the list of escaped indices 
-					(escapedIndices ??= new HashSet<int>()).Add(cursor);
-					continue;
-				}
-
-				// Break when we encounter the terminating unquoting char
-				if (@char == quoteChar)
-					break;
-			}
-
-			// Return the constant token
-			return new ConstantStringToken(expression, cursorStart, cursor - cursorStart + 1, escapedIndices?.ToArray());
-		}
-
-		private static bool IsNumberCharacter(char @char)
-		{
-			return @char > 47 && @char < 58;
+			return @char > 47 && @char < 58 || (includeSigns && (@char == Plus || @char == Minus));
 		}
 
 		private static bool IsNumericCharacter(char @char, char decimalSeperator, char thousandSeperator, ref bool hasDecimalSep)
@@ -223,7 +216,7 @@ namespace Expressions.Net.Tokenization
 			return @char > 47 && @char < 58   // 0-9
 				|| (hasDecimalSep = (@char == decimalSeperator))
 				|| (@char == thousandSeperator && hasDecimalSep)
-				|| @char == '_';
+				|| @char == Underscore;
 		}
 
 		private static bool IsAlphaNumericOrUnderscore(char @char)
@@ -231,12 +224,12 @@ namespace Expressions.Net.Tokenization
 			return @char > 47 && @char < 58   // 0-9
 				|| @char > 64 && @char < 91   // A-Z
 				|| @char > 96 && @char < 123  // a-z
-				|| @char == '_';
+				|| @char == Underscore;
 		}
 
 		private static bool IsLetterOrUnderscore(char @char)
 		{
-			return @char > 64 && @char < 122 || @char == '_';
+			return @char > 64 && @char < 122 || @char == Underscore;
 		}
 
 		private static bool IsReadableCharacter(char @char)
@@ -246,12 +239,16 @@ namespace Expressions.Net.Tokenization
 
 		private static char NormalizeCharacter(char @char)
 		{
+			// TODO: Make this a settings: Properly formatted data should not be using “ and ” as string quotation marks
 			if (@char == DoubleQuoteOpening || @char == DoubleQuoteClosing)
 				return DoubleQuote;
-				
+
 			if (@char == Hypen || @char == EnDash || @char == EmDash || @char == Minus2)
 				return Minus;
-			
+
+			if (@char == SingleQuoteRight || @char == SingleQuoteLeft)
+				return SingleQuote;
+
 			return @char;
 		}
 	}

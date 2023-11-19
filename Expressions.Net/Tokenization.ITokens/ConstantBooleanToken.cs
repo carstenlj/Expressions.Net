@@ -6,7 +6,6 @@ namespace Expressions.Net.Tokenization.ITokens
 {
 	internal sealed class ConstantBooleanToken : IConstantToken
 	{
-		public ConstantTokenType Type => ConstantTokenType.Boolean;
 		public string Text { get; }
 		public int StartIndex { get; }
 

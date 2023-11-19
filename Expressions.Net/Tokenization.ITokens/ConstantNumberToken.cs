@@ -1,14 +1,13 @@
 ﻿using Expressions.Net.Evaluation;
 using Expressions.Net.Evaluation.IValues;
 using System;
-using System.Data;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 
 namespace Expressions.Net.Tokenization.ITokens
 {
 	internal sealed class ConstantNumberToken : IConstantToken
 	{
-		public ConstantTokenType Type => ConstantTokenType.Number;
 		public string Text { get; }
 		public int StartIndex { get; }
 
@@ -25,7 +24,7 @@ namespace Expressions.Net.Tokenization.ITokens
 
 		public bool TryGetValue([NotNullWhen(true)] out IValue? value)
 		{
-			value = double.TryParse(Text, out var number)
+			value = double.TryParse(Text, NumberStyles.Number, CultureInfo.InvariantCulture, out var number)
 				? new NumberValue(number)
 				: null as IValue;
 

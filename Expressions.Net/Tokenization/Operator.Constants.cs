@@ -27,6 +27,9 @@ namespace Expressions.Net.Tokenization
 		public static readonly Operator ParenthesisBegin = new Operator(null, 0, '(');
 		public static readonly Operator ParenthesisEnd = new Operator(null, 0, ')');
 
+		public static readonly Operator Equal2 = new Operator(OperatorMethodInfo.Equal, 5, '=');
+		public static readonly Operator And2 = new Operator(OperatorMethodInfo.And, 4, 'A', 'N', 'D');
+		public static readonly Operator Or2 = new Operator(OperatorMethodInfo.Or, 3, 'O', 'R');
 
 		/// <summary>
 		/// All operators sorted (somewhat) by commonality
