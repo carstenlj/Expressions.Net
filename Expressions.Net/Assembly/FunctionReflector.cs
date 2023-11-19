@@ -1,23 +1,34 @@
-﻿using System;
+﻿using Expressions.Net.Assembly;
+using System;
 using System.Collections.Generic;
 using System.Reflection;
 
 namespace Expressions.Net.Assemblies
 {
-	public static class FunctionReflector
+    public static class FunctionReflector
 	{
-		public static void PupulateCacheWith(Type typeContainingFunctions, Dictionary<string, FunctionGroupDescriptor> cache)
+		public static void PopulateOperatorCacheWith(Type typeContainingFunctions, Dictionary<string, MethodInfo> cache)
+		{
+			foreach (var methodInfo in typeContainingFunctions.GetMethods())
+			{
+				var attr = methodInfo.GetCustomAttribute<OperatorFunctionAttribute>();
+				if (attr != null)
+					cache.Add(attr.Operator, methodInfo);
+			}
+		}
+
+		public static void PopulateFunctionCacheWith(Type typeContainingFunctions, Dictionary<string, FunctionGroupDescriptor> cache)
 		{
 			foreach (var methodInfo in typeContainingFunctions.GetMethods())
 			{
 				foreach (var functionDescriptor in GetFunctionDescriptors(methodInfo))
 				{
-					PopulateCacheWith(functionDescriptor, methodInfo, cache);
+					PopulateFunctionCacheWith(functionDescriptor, methodInfo, cache);
 				}
 			}
 		}
 
-		internal static void PopulateCacheWith(FunctionDescriptor functionDescriptor, MethodInfo methodInfo, Dictionary<string, FunctionGroupDescriptor> cache)
+		internal static void PopulateFunctionCacheWith(FunctionDescriptor functionDescriptor, MethodInfo methodInfo, Dictionary<string, FunctionGroupDescriptor> cache)
 		{
 			if (!cache.TryGetValue(functionDescriptor.Alias, out var functionGroup))
 			{
@@ -42,7 +53,5 @@ namespace Expressions.Net.Assemblies
 			foreach (var funcAttr in methodInfo.GetCustomAttributes<ExpressionFunctionAttribute>())
 				yield return FunctionDescriptor.Parse(funcAttr.Signature);
 		}
-
-
 	}
 }

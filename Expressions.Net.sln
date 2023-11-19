@@ -9,11 +9,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Expressions.Net.Tests", "Ex
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Expressions.Net.DependencyInjection", "Expressions.Net.DependencyInjection\Expressions.Net.DependencyInjection.csproj", "{3EC1C0CC-9A17-4AE9-B14A-5C2E3292AD44}"
 EndProject
-Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "Expressions.Net.Assemblies.Shared", "Expressions.Net.Assemblies.Shared\Expressions.Net.Assemblies.Shared.shproj", "{6E2FBAD8-0959-45CF-AF90-033DCC6C35AE}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Expressions.Net.Assemblies", "Expressions.Net.Assemblies\Expressions.Net.Assemblies.csproj", "{AD27F232-1907-4BD3-A81B-6F69D0FDC753}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Expressions.Net.Tests.Generator", "Expressions.Net.Tests.Generator\Expressions.Net.Tests.Generator.csproj", "{98A8E045-A40A-4277-A47C-9FEEB08AA8D0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,24 +28,11 @@ Global
 		{3EC1C0CC-9A17-4AE9-B14A-5C2E3292AD44}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3EC1C0CC-9A17-4AE9-B14A-5C2E3292AD44}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3EC1C0CC-9A17-4AE9-B14A-5C2E3292AD44}.Release|Any CPU.Build.0 = Release|Any CPU
-		{AD27F232-1907-4BD3-A81B-6F69D0FDC753}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{AD27F232-1907-4BD3-A81B-6F69D0FDC753}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{AD27F232-1907-4BD3-A81B-6F69D0FDC753}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{AD27F232-1907-4BD3-A81B-6F69D0FDC753}.Release|Any CPU.Build.0 = Release|Any CPU
-		{98A8E045-A40A-4277-A47C-9FEEB08AA8D0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{98A8E045-A40A-4277-A47C-9FEEB08AA8D0}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{98A8E045-A40A-4277-A47C-9FEEB08AA8D0}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{98A8E045-A40A-4277-A47C-9FEEB08AA8D0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {794308C4-C386-4E99-8315-D32F6CFC72BA}
-	EndGlobalSection
-	GlobalSection(SharedMSBuildProjectFiles) = preSolution
-		Expressions.Net.Assemblies.Shared\Expressions.Net.Assemblies.Shared.projitems*{176ce9e8-df51-4b76-a3a4-246fa21a9ae3}*SharedItemsImports = 5
-		Expressions.Net.Assemblies.Shared\Expressions.Net.Assemblies.Shared.projitems*{6e2fbad8-0959-45cf-af90-033dcc6c35ae}*SharedItemsImports = 13
-		Expressions.Net.Assemblies.Shared\Expressions.Net.Assemblies.Shared.projitems*{ad27f232-1907-4bd3-a81b-6f69d0fdc753}*SharedItemsImports = 5
 	EndGlobalSection
 EndGlobal
