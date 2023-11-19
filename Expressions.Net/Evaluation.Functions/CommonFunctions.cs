@@ -6,21 +6,18 @@ namespace Expressions.Net.Evaluation.Functions
 {
 	public static class CommonFunctions
 	{
-		[ExpressionFunction("string.Length():number")]
+		[ExpressionFunction("string|number|boolean.Length():number")]
 		[ExpressionFunction("array<T>.Length():number")]
 		[ExpressionFunction("object.Length():number")]
 		public static IValue Length(this IValue arg0)
 		{
-			if (arg0.IsString())
-				return new NumberValue(arg0.AsString()?.Length ?? 0);
-
 			if (arg0.IsArray())
 				return new NumberValue(arg0.AsArray()?.Count ?? 0);
 
 			if (arg0.IsObject())
 				return new NumberValue(arg0.AsObject()?.Keys.Count ?? 0);
 
-			return InvalidValue.FunctionNotSupportedForArgs(nameof(Length), arg0);
+			return new NumberValue(arg0.Data?.ToString()?.Length ?? 0);
 		}
 
 		[ExpressionFunction("any.ToString():string")]
@@ -28,7 +25,6 @@ namespace Expressions.Net.Evaluation.Functions
 		{
 			return new StringValue(arg0.ToString());
 		}
-
 
 		public static IValue Union(this IValue arg0, IValue arg1)
 		{

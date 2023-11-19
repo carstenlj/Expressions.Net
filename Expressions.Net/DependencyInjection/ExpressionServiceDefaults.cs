@@ -17,7 +17,8 @@ namespace Expressions.Net.DependencyInjection
 			{ typeof(IFunctionsProvider), typeof(FunctionsProvider) },
 			{ typeof(IExpressionFactory), typeof(ExpressionFactory) },
 			{ typeof(IExpressionCompiler), typeof(ExpressionCompiler) },
-			{ typeof(IExpressionTokenizer), typeof(Tokenizer) }
+			{ typeof(IExpressionTokenizer), typeof(Tokenizer) },
+			{ typeof(IStringTokenizer), typeof(StringTokenizer) }
 		};
 	}
 }

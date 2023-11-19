@@ -1,5 +1,6 @@
 ﻿using Expressions.Net.Evaluation.IValueTypes;
 using System;
+using System.Globalization;
 
 namespace Expressions.Net.Evaluation.IValues
 {
@@ -13,6 +14,11 @@ namespace Expressions.Net.Evaluation.IValues
 		public DateTimeValue(DateTime? val)
 		{
 			Data = val;
+		}
+
+		public override string ToString()
+		{
+			return Data == null ? string.Empty : ((DateTime)Data).ToString(CultureInfo.InvariantCulture) ?? string.Empty;
 		}
 	}
 }

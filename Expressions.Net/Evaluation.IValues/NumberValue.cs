@@ -2,12 +2,6 @@
 
 namespace Expressions.Net.Evaluation.IValues
 {
-	//internal sealed class NumberValue : ValueBase
-	//{
-	//	public NumberValue(double? val)
-	//		: base(NumberType.Invariant, val) { }
-	//}
-
 	internal readonly struct NumberValue : IValue
 	{
 		private readonly double _value;

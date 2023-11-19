@@ -1,5 +1,4 @@
 ﻿using Expressions.Net.Evaluation.IValueTypes;
-using Expressions.Net.Tokenization;
 using System.Linq;
 
 namespace Expressions.Net.Evaluation.IValues
@@ -22,13 +21,12 @@ namespace Expressions.Net.Evaluation.IValues
 		internal static InvalidValue CannotResolveProperty(string propertyName) => new InvalidValue($"Cannot resolve property '{propertyName}'");
 		internal static InvalidValue CannotResolveProperty(string propertyName, IValueType type) => new InvalidValue($"Cannot resolve property '{propertyName}' of type '{type}'");
 		internal static InvalidValue CannotResolveValue(IValueType type) => new InvalidValue($"Cannot resolve of type '{type}'");
-		internal static InvalidValue CannotResolveConstantValue(ConstantTokenType type) => new InvalidValue($"Cannot resolve constant of type '{type}'");
 		internal static InvalidValue InvalidExpressionFunction() => new InvalidValue($"Invalid expression function");
 		internal static InvalidValue InvalidExpressionFunction(string message) => new InvalidValue($"Invalid expression function ({message})");
 		internal static InvalidValue VariableNotDeclared(string variable) => new InvalidValue($"Variable '{variable}' not declared");
 		internal static InvalidValue OperatorOrOperandMissing() => new InvalidValue($"Operator or operand missing");
 
-		
+	
 		private static string ArgTypes(params IValue[] args) => string.Join(",", args.Select(x => $"'{x.Type.RootType.ToString().ToLower()}'"));
 		private static string ItemTypes(params IValue[] args) => string.Join(",", args.Select(x => $"'{(x.Type as ArrayType)?.ItemType?.ToString().ToLower()}'"));
 	}
