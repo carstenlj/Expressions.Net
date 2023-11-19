@@ -8,28 +8,25 @@ namespace Expressions.Net.Tokenization
 	internal sealed partial class Operator
 	{
 		public static readonly Operator ObjectAccessor = new Operator(null, 12, '.');
-		public static readonly Operator Not = new Operator(nameof(OperatorFunctions.Not), 10, '!');
-		public static readonly Operator Divide = new Operator(nameof(OperatorFunctions.Divide), 8, '/');
-		public static readonly Operator Modulus = new Operator(nameof(OperatorFunctions.Modulus), 8, '%');
-		public static readonly Operator Multiply = new Operator(nameof(OperatorFunctions.Multiply), 8, '*');
-		public static readonly Operator Add = new Operator(nameof(OperatorFunctions.Add), 7, '+');
-		public static readonly Operator Subtract = new Operator(nameof(OperatorFunctions.Subtract), 7, '-');
-		public static readonly Operator GreaterThan = new Operator(nameof(OperatorFunctions.GreaterThan), 6, '>');
-		public static readonly Operator GreaterThanOrEqual = new Operator(nameof(OperatorFunctions.GreaterThanOrEqual), 6, '>', '=');
-		public static readonly Operator LessThanOrEqual = new Operator(nameof(OperatorFunctions.LessThanOrEqual), 6, '<', '=');
-		public static readonly Operator LessThan = new Operator(nameof(OperatorFunctions.LessThan), 6, '<');
-		public static readonly Operator Equal = new Operator(nameof(OperatorFunctions.Equal), 5, '=', '=');
-		public static readonly Operator NotEqual = new Operator(nameof(OperatorFunctions.NotEqual), 5, '!', '=');
-		public static readonly Operator And = new Operator(nameof(OperatorFunctions.And), 4, '&', '&');
-		public static readonly Operator Coalesce = new Operator(nameof(OperatorFunctions.Coalesce), 2, '?', '?');
-		public static readonly Operator Or = new Operator(nameof(OperatorFunctions.Or), 3, '|', '|');
+		public static readonly Operator Not = new Operator(OperatorMethodInfo.Not, 10, '!');
+		public static readonly Operator Divide = new Operator(OperatorMethodInfo.Divide, 8, '/');
+		public static readonly Operator Modulus = new Operator(OperatorMethodInfo.Modulus, 8, '%');
+		public static readonly Operator Multiply = new Operator(OperatorMethodInfo.Multiply, 8, '*');
+		public static readonly Operator Add = new Operator(OperatorMethodInfo.Add, 7, '+');
+		public static readonly Operator Subtract = new Operator(OperatorMethodInfo.Subtract, 7, '-');
+		public static readonly Operator GreaterThan = new Operator(OperatorMethodInfo.GreaterThan, 6, '>');
+		public static readonly Operator GreaterThanOrEqual = new Operator(OperatorMethodInfo.GreaterThanOrEqual, 6, '>', '=');
+		public static readonly Operator LessThanOrEqual = new Operator(OperatorMethodInfo.LessThanOrEqual, 6, '<', '=');
+		public static readonly Operator LessThan = new Operator(OperatorMethodInfo.LessThan, 6, '<');
+		public static readonly Operator Equal = new Operator(OperatorMethodInfo.Equal, 5, '=', '=');
+		public static readonly Operator NotEqual = new Operator(OperatorMethodInfo.NotEqual, 5, '!', '=');
+		public static readonly Operator And = new Operator(OperatorMethodInfo.And, 4, '&', '&');
+		public static readonly Operator Coalesce = new Operator(OperatorMethodInfo.Coalesce, 2, '?', '?');
+		public static readonly Operator Or = new Operator(OperatorMethodInfo.Or, 3, '|', '|');
 		public static readonly Operator ArgumentSeperator = new Operator(null, 1, ',');
 		public static readonly Operator ParenthesisBegin = new Operator(null, 0, '(');
 		public static readonly Operator ParenthesisEnd = new Operator(null, 0, ')');
 
-		public static readonly Operator Equal2 = new Operator(nameof(OperatorFunctions.Equal), 5, '=');
-		public static readonly Operator And2 = new Operator(nameof(OperatorFunctions.And), 4, 'A', 'N', 'D');
-		public static readonly Operator Or2 = new Operator(nameof(OperatorFunctions.Or), 3, 'O', 'R');
 
 		/// <summary>
 		/// All operators sorted (somewhat) by commonality

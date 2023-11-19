@@ -4,23 +4,29 @@ using Expressions.Net.Evaluation.Functions.Wud;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 
 namespace Expressions.Net.Evaluation
 {
 	public class FunctionsProvider : IFunctionsProvider
 	{
-
 		public static readonly Dictionary<string, FunctionMethodSignatures> FunctionsCache;
+		public static readonly Dictionary<string, MethodInfo> OperatorCache;
 
 		static FunctionsProvider()
 		{
-			var cache = new Dictionary<string, FunctionGroupDescriptor>();
-			FunctionReflector.PupulateCacheWith(typeof(OperatorFunctions), cache);
-			FunctionReflector.PupulateCacheWith(typeof(CommonFunctions), cache);
-			FunctionReflector.PupulateCacheWith(typeof(NumericFunctions), cache);
-			FunctionReflector.PupulateCacheWith(typeof(ObjectFunctions), cache);
+			var functionsCache = new Dictionary<string, FunctionGroupDescriptor>();
+			var operatorCache= new Dictionary<string, MethodInfo>(StringComparer.OrdinalIgnoreCase);
 
-			FunctionsCache = cache.ToDictionary(x => x.Key, x => new FunctionMethodSignatures(x.Value), StringComparer.OrdinalIgnoreCase);
+			FunctionReflector.PopulateOperatorCacheWith(typeof(OperatorFunctions), operatorCache);
+			FunctionReflector.PopulateFunctionCacheWith(typeof(OperatorFunctions), functionsCache);
+			FunctionReflector.PopulateFunctionCacheWith(typeof(CommonFunctions), functionsCache);
+			FunctionReflector.PopulateFunctionCacheWith(typeof(NumericFunctions), functionsCache);
+			FunctionReflector.PopulateFunctionCacheWith(typeof(ObjectFunctions), functionsCache);
+
+
+			FunctionsCache = functionsCache.ToDictionary(x => x.Key, x => new FunctionMethodSignatures(x.Value), StringComparer.OrdinalIgnoreCase);
+			OperatorCache = operatorCache;
 		}
 
 		public LookupFunctionInfoResult LookupFunctionInfo(string fuctionName, params IValueType[] argTypes)
@@ -36,20 +42,12 @@ namespace Expressions.Net.Evaluation
 			return LookupFunctionInfoResult.Exists(functionInfo.MethodInfo, validSignatures, nullArgCount);
 		}
 
-		//private IEnumerable<FunctionSignature> GetValidOverloads(IEnumerable<FunctionSignature> functionOverloads, IValueType[] argTypes)
-		//{
-		//	foreach (var overload in functionOverloads)
-		//	{
-		//		var isValid = true;
-		//		for (var i = 0; i < argTypes.Length; i++)
-		//		{
-		//			var overloadArg = overload.Args[i];
-		//			isValid &= (argTypes[i].CouldBe(overloadArg));
-		//		}
+		public MethodInfo? LookupOperatorMethodInfo(string @operator)
+		{
+			if (OperatorCache.TryGetValue(@operator, out var methodInfo))
+				return methodInfo;
 
-		//		if (isValid)
-		//			yield return overload;
-		//	}
-		//}
+			return null;
+		}
 	}
 }

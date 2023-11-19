@@ -24,8 +24,6 @@ namespace Expressions.Net.Compilation
 
 		public ExpressionDelegate Compile(TokenCollectionPostfix tokens, IDictionary<string, IValueType>? schema)
 		{
-			// TODO: Create a dedicate ISchema type to ensure case invariance
-			schema = schema == null ? null : new Dictionary<string,IValueType>(schema, StringComparer.OrdinalIgnoreCase);
 
 			// Create a new type builder to hold the Exec method for this expression
 			var method = new DynamicMethod($"ExecuteExpression_{Guid.NewGuid()}", ReturnType, ArgumentTypes, true);
@@ -48,13 +46,13 @@ namespace Expressions.Net.Compilation
 							continue;
 						}
 
-						isValid &= EmitFunctionToken(methodToken.FunctionName, operatorToken.OperandCount, methodToken.StartIndex, typeStack, methodIL);
+						isValid &= EmitOperatorToken(operatorToken, typeStack, methodIL);
 						continue;
 					}
 
 					if (token is FunctionToken functionToken)
 					{
-						isValid &= EmitFunctionToken(methodToken.FunctionName, functionToken.OperandCount, methodToken.StartIndex, typeStack, methodIL);
+						isValid &= EmitFunctionToken(functionToken, typeStack, methodIL);
 						continue;
 					}
 
@@ -86,23 +84,67 @@ namespace Expressions.Net.Compilation
 			return (ExpressionDelegate)method.CreateDelegate(typeof(ExpressionDelegate));
 		}
 
-		private bool EmitFunctionToken(string functionName, int operandCount, int startIdx, Stack<IValueType> typeStack, ILGenerator methodIL)
+		private bool EmitOperatorToken(OperatorToken operatorToken, Stack<IValueType> typeStack, ILGenerator methodIL)
 		{
-			//var argCount = (isGlobal ? 0 : 1) + (takesArguments ? 1 : 0);
-			var argTypes = PopServeralInReserveOrder(typeStack, operandCount).SelectMany(ArgsValueType.GetTypes).ToArray();
+			var methodInfo = FunctionsProvider.LookupOperatorMethodInfo(operatorToken.ToString());
+			if (methodInfo == null)
+				return false;
+
+			// NOTE: We're currently evaluating the actual return value of the operator in order to push the correct IValueType onto the stack.
+			// In order to get more precise compilation errors and the option to generate valid test cases,
+			// the operator functions should follow the same declarative pattern as the functions currently do.
+			var args = PopServeralInReserveOrder(typeStack, operatorToken.OperandCount)
+				//.SelectMany(ArgsValueType.GetTypes)
+				.ToArray();
+
+			if (args.OfType<AmbiguousValueType>().Any())
+			{
+				typeStack.Push(AmbiguousValueType.Any);
+			}
+			else
+			{
+				var result = (IValue?)operatorToken.Operator.MethodInfo?.Invoke(null, args.Select(x => x.CreateDefaultValue()).ToArray());
+				if (result?.Type is InvalidType)
+					throw new InvalidOperationException($"Operator '{operatorToken.ToString()}' returns an invalid value for argument types '{string.Join(',', args.Select(x => x.ToString()))}'");
+
+				typeStack.Push(result?.Type ?? AmbiguousValueType.Any);
+			}
 			
-			var functionLookup = FunctionsProvider.LookupFunctionInfo(functionName, argTypes);
+			methodIL.EmitFunctionCall(methodInfo);
+			return true;
+		}
+
+		private bool EmitFunctionToken(FunctionToken functionToken, Stack<IValueType> typeStack, ILGenerator methodIL)
+		{
+			var argTypes = ArgsValueType.GetTypes(PopServeralInReserveOrder(typeStack, functionToken.OperandCount)).ToArray();
+			
+			var functionLookup = FunctionsProvider.LookupFunctionInfo(functionToken.FunctionName, argTypes);
 
 			if (!functionLookup.Success)
-				throw new Exception($"Index {startIdx}: Function '{functionName}' does not exist or no overloads exists that accepts '{(string.Join(",",argTypes.Select(x => x.ToString())))}' as arguments");
+				throw new Exception($"Index {functionToken.StartIndex}: Function '{functionToken.FunctionName}' does not exist or no overloads exists that accepts '{(string.Join(",",argTypes.Select(x => x.ToString())))}' as arguments");
 
 			if (functionLookup.ReturnType == null)
-				throw new InvalidOperationException($"Index {startIdx}: Function '{functionName}' exists but incorrectly declared (no return type)");
+				throw new InvalidOperationException($"Index {functionToken.StartIndex}: Function '{functionToken.FunctionName}' exists but incorrectly declared (no return type)");
 
 			if (functionLookup.MethodInfo == null)
-				throw new InvalidOperationException($"Index {startIdx}: Function '{functionName}' exists but incorrectly declared (no method info)");
+				throw new InvalidOperationException($"Index {functionToken.StartIndex}: Function '{functionToken.FunctionName}' exists but incorrectly declared (no method info)");
 
-			typeStack.Push(functionLookup.ReturnType);
+			if (functionLookup.ReturnType is AmbiguousValueType && !argTypes.OfType<AmbiguousValueType>().Any())
+			{
+				if (functionLookup.NullArgCount > 0)
+					Array.Resize(ref argTypes, argTypes.Length + functionLookup.NullArgCount);
+				
+				var returnType = ((IValue?)functionLookup.MethodInfo.Invoke(this, argTypes.Select(x => x?.CreateDefaultValue() ?? null).ToArray()))?.Type;
+				if (returnType is InvalidType)
+					throw new InvalidOperationException($"Function {functionToken} returns an invalid value for argument types '{string.Join(',', argTypes.Select(x => x.ToString()))}'");
+				
+				typeStack.Push(returnType ?? AmbiguousValueType.Any);
+			}
+			else
+			{
+				typeStack.Push(functionLookup.ReturnType);
+			}
+			
 			return methodIL.EmitFunctionCall(functionLookup.MethodInfo, functionLookup.NullArgCount);
 		}
 
@@ -150,11 +192,6 @@ namespace Expressions.Net.Compilation
 				operands[i - 1] = typeStack.Pop();
 
 			return operands;
-		}
-
-		private static IValue InvalidExpressionFunction(IVariables? variables = null)
-		{
-			return InvalidValue.InvalidExpressionFunction();
 		}
 
 		private static ExpressionDelegate InvalidExpressionFunction(string message)

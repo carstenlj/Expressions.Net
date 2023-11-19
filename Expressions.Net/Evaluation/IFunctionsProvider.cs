@@ -1,7 +1,10 @@
-﻿namespace Expressions.Net.Evaluation
+﻿using System.Reflection;
+
+namespace Expressions.Net.Evaluation
 {
 	public partial interface IFunctionsProvider
 	{
 		LookupFunctionInfoResult LookupFunctionInfo(string fuctionName, params IValueType[] argTypes);
+		MethodInfo? LookupOperatorMethodInfo(string @operator);
 	}
 }

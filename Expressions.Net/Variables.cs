@@ -9,13 +9,14 @@ namespace Expressions.Net
 	public class Variables : IVariables
 	{
 		public string[] Keys => Data.Keys.ToArray();
+		public IDictionary<string, IValueType> Schema { get; }
 		private IDictionary<string, IValue> Data { get; }
-
 
 		public Variables() : this(new Dictionary<string, IValue>()) { }
 		public Variables(IDictionary<string, IValue> dictionary)
 		{
 			Data = new Dictionary<string, IValue>(dictionary, StringComparer.OrdinalIgnoreCase);
+			Schema = Data.ToDictionary(x => x.Key, x => x.Value.Type, StringComparer.OrdinalIgnoreCase);
 		}
 
 		public IValue Lookup(string variableName) => Data[variableName];

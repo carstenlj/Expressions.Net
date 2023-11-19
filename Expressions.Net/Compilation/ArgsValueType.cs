@@ -2,28 +2,41 @@
 using Expressions.Net.Evaluation;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Expressions.Net.Compilation
 {
-	internal class ArgsValueType : IValueType
+	internal sealed class ArgsValueType : IValueType
 	{
 		public ValueRootType RootType => ValueRootType.Invalid;
-		public List<IValueType> ArgumentTypes { get; set; }
+		public IEnumerable<IValueType> ArgumentTypes { get; set; }
 
 		public ArgsValueType(IValueType[] types)
 		{
-			var types0 = GetTypes(types[0]);
-			var types1 = GetTypes(types[1]);
-			types0.AddRange(types1);
-
-			ArgumentTypes = new List<IValueType>(types0);
+			ArgumentTypes = GetTypes(types);
 		}
 
 		public IValue CreateDefaultValue() => throw new NotSupportedException();
+
 		public IValue CreateNullValue() => throw new NotSupportedException();
+
 		public IValue CreateValue(object? data, IValueConverter valueConverter) => throw new NotSupportedException();
+
 		Type IValueType.ConvertToType(IValueTypeConverter typeConverter) => throw new NotSupportedException();
-		public static List<IValueType> GetTypes(IValueType type) => type is ArgsValueType args ? args.ArgumentTypes : new List<IValueType> { type };
+
+		public static IEnumerable<IValueType> GetTypes(IValueType[] types)
+		{
+			foreach(var type in types)
+			{
+				if (type is ArgsValueType args)
+				{
+					foreach (var subType in args.ArgumentTypes)
+						yield return subType;
+				}
+				else
+				{
+					yield return type;
+				}
+			}
+		}
 	}
 }
