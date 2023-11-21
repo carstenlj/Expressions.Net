@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace Expressions.Net.Tokenization
 {
-	internal sealed partial class Operator
+	public sealed partial class Operator
 	{
 		public static readonly Operator ObjectAccessor = new Operator(null, 12, '.');
 		public static readonly Operator Not = new Operator(OperatorMethodInfo.Not, 10, '!');
@@ -28,27 +28,24 @@ namespace Expressions.Net.Tokenization
 		public static readonly Operator ParenthesisEnd = new Operator(null, 0, ')');
 
 		public static readonly Operator Equal2 = new Operator(OperatorMethodInfo.Equal, 5, '=');
-		public static readonly Operator And2 = new Operator(OperatorMethodInfo.And, 4, 'A', 'N', 'D');
-		public static readonly Operator Or2 = new Operator(OperatorMethodInfo.Or, 3, 'O', 'R');
 
 		/// <summary>
 		/// All operators sorted (somewhat) by commonality
 		/// </summary>
-		public static readonly Operator[] All = new Operator[] {
+		public static readonly Operator[] AllCoreOperators = new Operator[] {
 			ParenthesisBegin, ParenthesisEnd, Add, Not, Equal, NotEqual, And, Or, LessThan, GreaterThan, ObjectAccessor,
 			GreaterThanOrEqual, LessThanOrEqual,Subtract,Multiply,Divide,ArgumentSeperator,Coalesce,Modulus,
-			Equal2, And2, Or2
+			Equal2
 
 		};
 
-		private static readonly IDictionary<char, Operator[]> StartingCharLookup = All
+		private static readonly IDictionary<char, Operator[]> StartingCharLookup = AllCoreOperators
 			.GroupBy(x => x.Char0)
 			.ToDictionary(
 				keySelector: x => x.Key, 
-				elementSelector: x => x.OrderBy(x => !x.Char2.HasValue).ThenBy(x => !x.Char1.HasValue).ToArray(),
-				comparer: CharComparer.IgnoreCase);
+				elementSelector: x => x.OrderBy(x => !x.Char2.HasValue).ThenBy(x => !x.Char1.HasValue).ToArray());
 
-		public static bool TryGetOperatorsStartingWith(char @char, [NotNullWhen(true)] out Operator[]? matchingOperators)
+		public static bool TryGetArithmeticOperatorsStartingWith(char @char, [NotNullWhen(true)] out Operator[]? matchingOperators)
 		{
 			matchingOperators = null;
 

@@ -9,7 +9,7 @@ namespace Expressions.Net.Tests.ExpressionFunctionTests
 	{
 		[Theory(DisplayName = "Verify ")]
 		[ClassData(typeof(ExpressionFunctionTestSource))]
-		public void TestExpressionWithExprectedResult(string Expression, string Returns)
+		public void TestExpressionWithExpectedResult(string Expression, string Returns)
 		{
 			// Arrange
 			var expressionFunction = ExpresisonFactory.CreateDelegate(Expression);

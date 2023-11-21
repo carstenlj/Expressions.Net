@@ -11,9 +11,9 @@ namespace Expressions.Net.Tests
 	{
 		protected static IHost Host { get; } = ExpressionServiceHostBuilder.CreateDefault().Build();
 
-		protected IExpressionFactory ExpresisonFactory => Host.Services.GetRequiredService<IExpressionFactory>();
-		protected IExpressionTokenizer Tokenizer => Host.Services.GetRequiredService<IExpressionTokenizer>();
-		protected IValueConverter Converter => Host.Services.GetRequiredService<IValueConverter>();
+		protected virtual IExpressionFactory ExpresisonFactory => Host.Services.GetRequiredService<IExpressionFactory>();
+		protected virtual IExpressionTokenizer Tokenizer => Host.Services.GetRequiredService<IExpressionTokenizer>();
+		protected virtual IValueConverter Converter => Host.Services.GetRequiredService<IValueConverter>();
 
 		protected static object[] Case(string expression, object equals) => new object[] { expression, equals };
 

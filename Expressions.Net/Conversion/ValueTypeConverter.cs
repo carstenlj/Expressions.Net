@@ -10,6 +10,8 @@ namespace Expressions.Net.Conversion
 {
 	internal sealed class ValueTypeConverter : IValueTypeConverter
 	{
+		public static readonly ValueTypeConverter Default = new ValueTypeConverter();
+
 		private readonly ModuleBuilder ModuleBuilder = AssemblyBuilder
 			.DefineDynamicAssembly(new AssemblyName(Guid.NewGuid().ToString()), AssemblyBuilderAccess.Run)
 			.DefineDynamicModule("Expressions.Net.Conversion");

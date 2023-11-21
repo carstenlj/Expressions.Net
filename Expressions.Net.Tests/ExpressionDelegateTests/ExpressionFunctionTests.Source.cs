@@ -8,6 +8,8 @@ namespace Expressions.Net.Tests.ExpressionFunctionTests
 	/// </summary>
 	internal class ExpressionFunctionTestSource : IEnumerable<object[]>
 	{
+		protected virtual FunctionsProvider FunctionsProvider => FunctionsProvider.Default;
+
 		public record TestCase(string Expression, IValueType Returns);
 
 		IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();

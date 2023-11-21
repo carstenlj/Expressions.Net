@@ -15,16 +15,17 @@ namespace Expressions.Net.Compilation
 		private static readonly Type[] ArgumentTypes = new[] { typeof(IVariables) };
 		private static readonly Type ReturnType = typeof(IValue);
 
-		public IFunctionsProvider FunctionsProvider { get; }
+		private readonly IOperatorProvider _operatorProvider;
+		private readonly IFunctionsProvider _functionsProvider;
 
-		public ExpressionCompiler(IFunctionsProvider functionsProvider)
+		public ExpressionCompiler(IOperatorProvider operatorProvider, IFunctionsProvider functionsProvider)
 		{
-			FunctionsProvider = functionsProvider;
+			_operatorProvider = operatorProvider;
+			_functionsProvider = functionsProvider;
 		}
 
 		public ExpressionDelegate Compile(TokenCollectionPostfix tokens, IDictionary<string, IValueType>? schema)
 		{
-
 			// Create a new type builder to hold the Exec method for this expression
 			var method = new DynamicMethod($"ExecuteExpression_{Guid.NewGuid()}", ReturnType, ArgumentTypes, true);
 			var methodIL = method.GetILGenerator();
@@ -86,7 +87,7 @@ namespace Expressions.Net.Compilation
 
 		private bool EmitOperatorToken(OperatorToken operatorToken, Stack<IValueType> typeStack, ILGenerator methodIL)
 		{
-			var methodInfo = FunctionsProvider.LookupOperatorMethodInfo(operatorToken.ToString());
+			var methodInfo = _operatorProvider.LookupOperatorMethodInfo(operatorToken.ToString());
 			if (methodInfo == null)
 				return false;
 
@@ -118,7 +119,7 @@ namespace Expressions.Net.Compilation
 		{
 			var argTypes = ArgsValueType.GetTypes(PopServeralInReserveOrder(typeStack, functionToken.OperandCount)).ToArray();
 			
-			var functionLookup = FunctionsProvider.LookupFunctionInfo(functionToken.FunctionName, argTypes);
+			var functionLookup = _functionsProvider.LookupFunctionInfo(functionToken.FunctionName, argTypes);
 
 			if (!functionLookup.Success)
 				throw new Exception($"Index {functionToken.StartIndex}: Function '{functionToken.FunctionName}' does not exist or no overloads exists that accepts '{(string.Join(",",argTypes.Select(x => x.ToString())))}' as arguments");

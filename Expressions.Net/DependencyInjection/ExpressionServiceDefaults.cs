@@ -15,10 +15,12 @@ namespace Expressions.Net.DependencyInjection
 			{ typeof(IValueConverter), typeof(ValueConverter) },
 			{ typeof(IValueTypeConverter), typeof(ValueTypeConverter) },
 			{ typeof(IFunctionsProvider), typeof(FunctionsProvider) },
+			{ typeof(IOperatorProvider), typeof(OperatorProvider) },
 			{ typeof(IExpressionFactory), typeof(ExpressionFactory) },
 			{ typeof(IExpressionCompiler), typeof(ExpressionCompiler) },
 			{ typeof(IExpressionTokenizer), typeof(Tokenizer) },
-			{ typeof(IStringTokenizer), typeof(StringTokenizer) }
+			{ typeof(IStringTokenizer), typeof(StringTokenizer) },
+			{ typeof(IKeywordTokenizer), typeof(KeywordTokenizer) }
 		};
 	}
 }

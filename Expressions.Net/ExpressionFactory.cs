@@ -2,6 +2,7 @@
 using Expressions.Net.Conversion;
 using Expressions.Net.Evaluation;
 using Expressions.Net.Tokenization;
+using System;
 using System.Collections.Generic;
 
 namespace Expressions.Net
@@ -28,16 +29,21 @@ namespace Expressions.Net
 
 		public IVariables CreateVariables(object? data, IDictionary<string, IValueType>? schema)
 		{
-			return new Variables(ValueConverter.ConvertToDictionary(data, schema) ?? new Dictionary<string, IValue>());
+			return new Variables(ValueConverter.ConvertToDictionary(data, schema) ?? new Dictionary<string, IValue>(StringComparer.OrdinalIgnoreCase));
 		}
 
 		public static IExpressionFactory CreateDefault()
 		{
 			return new ExpressionFactory(
 				expressionCompiler: new ExpressionCompiler(
+					operatorProvider: OperatorProvider.Default,
 					functionsProvider: new FunctionsProvider()
 				),
-				expressionTokenizer: new Tokenizer(),
+				expressionTokenizer: new Tokenizer(
+					stringTokenizer: StringTokenizer.Default,
+					keywordTokenizer: KeywordTokenizer.Default,
+					operatorProvider: OperatorProvider.Default
+				),
 				valueConverter: new ValueConverter(
 					typeConverter: new ValueTypeConverter(),
 					settings: ExpressionSettings.CreateDefault()

@@ -5,8 +5,21 @@ using System.Reflection;
 
 namespace Expressions.Net.Assemblies
 {
-    public static class FunctionReflector
+	public static class FunctionReflector
 	{
+		public static Dictionary<string, MethodInfo> GetOperatorMethodInfo(Type typeContainingFunctions)
+		{
+			var result = new Dictionary<string, MethodInfo>(StringComparer.OrdinalIgnoreCase);
+			foreach (var methodInfo in typeContainingFunctions.GetMethods())
+			{
+				var attr = methodInfo.GetCustomAttribute<OperatorFunctionAttribute>();
+				if (attr != null)
+					result.Add(attr.Operator, methodInfo);
+			}
+
+			return result;
+		}
+
 		public static void PopulateOperatorCacheWith(Type typeContainingFunctions, Dictionary<string, MethodInfo> cache)
 		{
 			foreach (var methodInfo in typeContainingFunctions.GetMethods())
@@ -17,7 +30,7 @@ namespace Expressions.Net.Assemblies
 			}
 		}
 
-		public static void PopulateFunctionCacheWith(Type typeContainingFunctions, Dictionary<string, FunctionGroupDescriptor> cache)
+		public static void PopulateDictionaryWithFunctionDescriptors(Type typeContainingFunctions, Dictionary<string, FunctionGroupDescriptor> cache)
 		{
 			foreach (var methodInfo in typeContainingFunctions.GetMethods())
 			{
@@ -39,7 +52,7 @@ namespace Expressions.Net.Assemblies
 			if (functionGroup.MethodInfo != methodInfo)
 				throw new InvalidOperationException($"Cannot declare diffrent methods with the same function alias '{functionDescriptor.Alias}'");
 
-			functionGroup.Signatures.Add(new FunctionSignatureDescriptor (
+			functionGroup.Signatures.Add(new FunctionSignatureDescriptor(
 				name: functionDescriptor.Alias,
 				isGlobal: functionDescriptor.IsGlobal,
 				args: functionDescriptor.Args,

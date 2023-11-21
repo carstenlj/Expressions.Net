@@ -4,29 +4,33 @@ using Expressions.Net.Evaluation.Functions.Wud;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 
 namespace Expressions.Net.Evaluation
 {
 	public class FunctionsProvider : IFunctionsProvider
 	{
-		public static readonly Dictionary<string, FunctionMethodSignatures> FunctionsCache;
-		public static readonly Dictionary<string, MethodInfo> OperatorCache;
+		public static readonly FunctionsProvider Default = new FunctionsProvider();
+		public readonly Dictionary<string, FunctionMethodSignatures> FunctionsCache;
 
-		static FunctionsProvider()
+		protected virtual bool UseCoreFunctions => true;
+
+		public FunctionsProvider()
 		{
 			var functionsCache = new Dictionary<string, FunctionGroupDescriptor>();
-			var operatorCache= new Dictionary<string, MethodInfo>(StringComparer.OrdinalIgnoreCase);
 
-			FunctionReflector.PopulateOperatorCacheWith(typeof(OperatorFunctions), operatorCache);
-			FunctionReflector.PopulateFunctionCacheWith(typeof(OperatorFunctions), functionsCache);
-			FunctionReflector.PopulateFunctionCacheWith(typeof(CommonFunctions), functionsCache);
-			FunctionReflector.PopulateFunctionCacheWith(typeof(NumericFunctions), functionsCache);
-			FunctionReflector.PopulateFunctionCacheWith(typeof(ObjectFunctions), functionsCache);
-
+			if(UseCoreFunctions)
+			{
+				FunctionReflector.PopulateDictionaryWithFunctionDescriptors(typeof(OperatorFunctions), functionsCache);
+				FunctionReflector.PopulateDictionaryWithFunctionDescriptors(typeof(CommonFunctions), functionsCache);
+				FunctionReflector.PopulateDictionaryWithFunctionDescriptors(typeof(NumericFunctions), functionsCache);
+				FunctionReflector.PopulateDictionaryWithFunctionDescriptors(typeof(ObjectFunctions), functionsCache);
+			}
+			
+			var customFunctions = CustomFunctions();
+			foreach(var function in customFunctions)
+				functionsCache.Add(function.Key, function.Value);
 
 			FunctionsCache = functionsCache.ToDictionary(x => x.Key, x => new FunctionMethodSignatures(x.Value), StringComparer.OrdinalIgnoreCase);
-			OperatorCache = operatorCache;
 		}
 
 		public LookupFunctionInfoResult LookupFunctionInfo(string fuctionName, params IValueType[] argTypes)
@@ -42,12 +46,10 @@ namespace Expressions.Net.Evaluation
 			return LookupFunctionInfoResult.Exists(functionInfo.MethodInfo, validSignatures, nullArgCount);
 		}
 
-		public MethodInfo? LookupOperatorMethodInfo(string @operator)
+		protected virtual IDictionary<string,FunctionGroupDescriptor> CustomFunctions()
 		{
-			if (OperatorCache.TryGetValue(@operator, out var methodInfo))
-				return methodInfo;
-
-			return null;
+			return new Dictionary<string, FunctionGroupDescriptor>();
 		}
+
 	}
 }

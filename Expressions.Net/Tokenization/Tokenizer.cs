@@ -1,38 +1,27 @@
-﻿using Expressions.Net.Tokenization.ITokens;
+﻿using Expressions.Net.Evaluation;
+using Expressions.Net.Tokenization.ITokens;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using static Expressions.Net.CharExtensions;
+using static Expressions.Net.Chars;
 
 namespace Expressions.Net.Tokenization
 {
 	internal sealed class Tokenizer : IExpressionTokenizer
 	{
-		internal const char Backslash = '\\';
-		internal const char SingleQuote = '\'';
-		internal const char SingleQuoteLeft = (char)8216;
-		internal const char SingleQuoteRight = (char)8217;
-		internal const char DoubleQuote = '"';
-		internal const char DoubleQuoteOpening = '“';
-		internal const char DoubleQuoteClosing = '”';
-		internal const char Underscore = '_';
-		internal const char Hypen = '-';
-		internal const char EnDash = '–';
-		internal const char EmDash = '—';
-		internal const char Minus2 = (char)8722;
-		internal const char Minus = (char)45;
-		internal const char Plus = '+';
-		internal const char ObjAccessor = '.';
-		internal const char DecimalPoint = '.';
-		internal const char DecimalSep = ',';
 		internal const string True = "true";
 		internal const string False = "false";
 
-
 		private readonly IStringTokenizer _stringTokenizer;
+		private readonly IKeywordTokenizer _keywordTokenizer;
+		private readonly IOperatorProvider _operatorProvider;
 
-		public Tokenizer(IStringTokenizer stringTokenizer)
+		public Tokenizer(IStringTokenizer stringTokenizer, IKeywordTokenizer keywordTokenizer, IOperatorProvider operatorProvider)
 		{
 			_stringTokenizer = stringTokenizer;
+			_keywordTokenizer = keywordTokenizer;
+			_operatorProvider = operatorProvider;
 		}
 
 		public TokenCollectionInfix Tokenize(ReadOnlySpan<char> expression)
@@ -87,39 +76,19 @@ namespace Expressions.Net.Tokenization
 					continue;
 
 				// NOTE: At this point @char will be the next readable character not included in the current tokenText
+				var tokenText = expression[startIndex..cursor].Trim().ToString();
 
-				// TODO: 
-				// We're currently materializing the tokenText here. Consider if it is worth delaying.
-				// Although it should be kept in mind that the constructors of the Function, Variable and Constant token will materialize
-				// In order to truly gain the full benefit from avoiding materializing here, all the token constructor should be changed to not do so themselves.
-				var tokenText = expression.Slice(startIndex, cursor - startIndex).Trim().ToString();
-
-				// TODO: All keywords (non-method and non-variable symbols) should be resolved centrally.
-				// Here we simply do a lookup to determine if the token text represents a registered keyword, and then return the keyword token
-				// Handle boolean constants
-				if (tokenText.Equals(True, StringComparison.InvariantCultureIgnoreCase) || tokenText.Equals(False, StringComparison.InvariantCultureIgnoreCase))
-					return new ConstantBooleanToken(tokenText, startIndex);
+				// Handle keywords
+				if (_keywordTokenizer.TryTokenizeKeyword(tokenText, startIndex, @char, out var keywordToken))
+					return keywordToken;
 
 				// Handle global functions
 				if (@char == Operator.ParenthesisBegin.Char0)
 				{
 					return expression[cursor + 1] == Operator.ParenthesisEnd.Char0 // Is function call without arguments?
 						? new FunctionToken(expression.Slice(startIndex, ++cursor - startIndex + 1).Trim().ToString(), startIndex, true)
-						: new FunctionToken(expression.Slice(startIndex, cursor - startIndex).Trim().ToString(), startIndex, true);
+						: new FunctionToken(expression[startIndex..cursor].Trim().ToString(), startIndex, true);
 				}
-
-				// Handle boolean constants
-				var token = expression.Slice(startIndex, cursor - startIndex).Trim().ToString();
-				if (token.Equals(True, StringComparison.InvariantCultureIgnoreCase) || token.Equals(False, StringComparison.InvariantCultureIgnoreCase))
-					return new ConstantBooleanToken(token, startIndex);
-
-				// Handle reserved keywords better
-				// TODO: Generic implementation
-				if (token.Equals("AND", StringComparison.OrdinalIgnoreCase))
-					return new OperatorToken(Operator.And2, startIndex);
-
-				if (token.Equals("OR", StringComparison.OrdinalIgnoreCase))
-					return new OperatorToken(Operator.Or2, startIndex);
 
 				// Return as a variable token
 				return new VariableToken(tokenText, startIndex, null);
@@ -139,18 +108,15 @@ namespace Expressions.Net.Tokenization
 
 				if (cursor - startIndex == 1)
 				{
-					if (@char == Plus)
-						return new OperatorToken(Operator.Add, startIndex);
-
-					if (@char == Minus)
-						return new OperatorToken(Operator.Subtract, startIndex);
+					if (@char == Plus) return new OperatorToken(Operator.Add, startIndex);
+					if (@char == Minus) return new OperatorToken(Operator.Subtract, startIndex);
 				}
 
 				return new ConstantNumberToken(expression, startIndex, cursor - startIndex);
 			}
 
 			// Check for operators
-			if (Operator.TryGetOperatorsStartingWith(@char, out var matchingOperators))
+			if (_operatorProvider.TryGetArithmeticOperatorsStartingWith(@char, out var matchingOperators))
 			{
 				// List of operator starting with the current @char.
 				foreach (var @operator in matchingOperators)
@@ -206,36 +172,6 @@ namespace Expressions.Net.Tokenization
 				: new FunctionToken(expression.Slice(startIndex, cursor - startIndex).ToString(), startIndex, false);
 		}
 
-		private static bool IsNumberCharacter(char @char, bool includeSigns = false)
-		{
-			return @char > 47 && @char < 58 || (includeSigns && (@char == Plus || @char == Minus));
-		}
-
-		private static bool IsNumericCharacter(char @char, char decimalSeperator, char thousandSeperator, ref bool hasDecimalSep)
-		{
-			return @char > 47 && @char < 58   // 0-9
-				|| (hasDecimalSep = (@char == decimalSeperator))
-				|| (@char == thousandSeperator && hasDecimalSep)
-				|| @char == Underscore;
-		}
-
-		private static bool IsAlphaNumericOrUnderscore(char @char)
-		{
-			return @char > 47 && @char < 58   // 0-9
-				|| @char > 64 && @char < 91   // A-Z
-				|| @char > 96 && @char < 123  // a-z
-				|| @char == Underscore;
-		}
-
-		private static bool IsLetterOrUnderscore(char @char)
-		{
-			return @char > 64 && @char < 122 || @char == Underscore;
-		}
-
-		private static bool IsReadableCharacter(char @char)
-		{
-			return @char > 32 && @char < 127;
-		}
 
 		private static char NormalizeCharacter(char @char)
 		{

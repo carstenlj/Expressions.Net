@@ -7,6 +7,8 @@ namespace Expressions.Net.Tokenization
 {
 	internal sealed class StringTokenizer : IStringTokenizer
 	{
+		public static readonly StringTokenizer Default = new StringTokenizer();
+
 		private bool _useBackslashEscaping;
 
 		public StringTokenizer()
@@ -34,14 +36,14 @@ namespace Expressions.Net.Tokenization
 					isEscaping = false;
 
 					// If the current character is eliglble for being escaped, then continue on
-					if (@char == Tokenizer.Backslash || @char == quoteChar)
+					if (@char == Chars.Backslash || @char == quoteChar)
 						continue;
 
-					throw new NotSupportedException($"Invalid escape sequence '{Tokenizer.Backslash}{@char}'");
+					throw new NotSupportedException($"Invalid escape sequence '{Chars.Backslash}{@char}'");
 				}
 
 				// Check if we should be escaping the next character
-				if (_useBackslashEscaping && @char == Tokenizer.Backslash)
+				if (_useBackslashEscaping && @char == Chars.Backslash)
 				{
 					isEscaping = true;
 

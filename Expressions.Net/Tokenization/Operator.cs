@@ -2,7 +2,7 @@
 
 namespace Expressions.Net.Tokenization
 {
-	internal sealed partial class Operator
+	public sealed partial class Operator
 	{
 		public MethodInfo? MethodInfo { get; set; }
 		public byte Precedens { get; }
