@@ -2,28 +2,26 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Expressions.Net.Assemblies
+namespace Expressions.Net.Reflection
 {
-	internal sealed class FunctionDescriptor
+	public sealed class ExpressionFunctionSignature
 	{
 		public string Alias { get; }
 		public string[] Args { get; }
 		public int RequiredArgsCount { get; }
-		public int NullArgCount { get; }
 		public string ReturnType { get; }
 		public bool IsGlobal { get; }
 
-		private FunctionDescriptor(string alias, string[] args, string returnType, bool isGlobal)
+		private ExpressionFunctionSignature(string alias, string[] args, string returnType, bool isGlobal)
 		{
 			Alias = alias;
 			Args = args.Where(x => !(x is null)).Select(x => x.Trim('?')).ToArray();
 			RequiredArgsCount = args.Count(x => !x.EndsWith('?'));
-			NullArgCount = args.Count(x => x is null);
 			ReturnType = returnType;
 			IsGlobal = isGlobal;
 		}
 
-		public static FunctionDescriptor Parse(ReadOnlySpan<char> signature)
+		public static ExpressionFunctionSignature Parse(ReadOnlySpan<char> signature)
 		{
 			var dotIndex = -1;
 			var paramsStartIndex = -1;
@@ -57,7 +55,7 @@ namespace Expressions.Net.Assemblies
 			args.AddRange(signature.Slice(paramsStartIndex + 1, paramsEndIndex - paramsStartIndex - 1).ToString().Split(',', StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim()));
 
 
-			return new FunctionDescriptor(
+			return new ExpressionFunctionSignature(
 				alias: methodName.ToString(),
 				args: args.ToArray(),
 				returnType: returnType.ToString(),

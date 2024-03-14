@@ -2,7 +2,7 @@
 
 namespace Expressions.Net.Evaluation.IValues
 {
-	internal readonly struct NumberValue : IValue
+	public readonly struct NumberValue : IValue
 	{
 		private readonly double _value;
 		private readonly bool _hasValue;

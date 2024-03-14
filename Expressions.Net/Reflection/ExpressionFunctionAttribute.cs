@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Expressions.Net.Assemblies
+namespace Expressions.Net.Reflection
 {
 	[AttributeUsage(AttributeTargets.Method, AllowMultiple = true)]
 	public sealed class ExpressionFunctionAttribute : Attribute

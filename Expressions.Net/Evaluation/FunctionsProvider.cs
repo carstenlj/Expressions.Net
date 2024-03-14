@@ -1,22 +1,22 @@
-﻿using Expressions.Net.Assemblies;
+﻿using Expressions.Net.Reflection;
 using Expressions.Net.Evaluation.Functions;
-using Expressions.Net.Evaluation.Functions.Wud;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace Expressions.Net.Evaluation
 {
-	public class FunctionsProvider : IFunctionsProvider
+    public class FunctionsProvider : IFunctionsProvider
 	{
 		public static readonly FunctionsProvider Default = new FunctionsProvider();
-		public readonly Dictionary<string, FunctionMethodSignatures> FunctionsCache;
+
+		public readonly Dictionary<string, FunctionSignatureGroup> FunctionsCache;
 
 		protected virtual bool UseCoreFunctions => true;
 
 		public FunctionsProvider()
 		{
-			var functionsCache = new Dictionary<string, FunctionGroupDescriptor>();
+			var functionsCache = new Dictionary<string, FunctionSignatureGroup>();
 
 			if(UseCoreFunctions)
 			{
@@ -30,7 +30,7 @@ namespace Expressions.Net.Evaluation
 			foreach(var function in customFunctions)
 				functionsCache.Add(function.Key, function.Value);
 
-			FunctionsCache = functionsCache.ToDictionary(x => x.Key, x => new FunctionMethodSignatures(x.Value), StringComparer.OrdinalIgnoreCase);
+			FunctionsCache = functionsCache.ToDictionary(x => x.Key, x => x.Value, StringComparer.OrdinalIgnoreCase);
 		}
 
 		public LookupFunctionInfoResult LookupFunctionInfo(string fuctionName, params IValueType[] argTypes)
@@ -46,9 +46,9 @@ namespace Expressions.Net.Evaluation
 			return LookupFunctionInfoResult.Exists(functionInfo.MethodInfo, validSignatures, nullArgCount);
 		}
 
-		protected virtual IDictionary<string,FunctionGroupDescriptor> CustomFunctions()
+		protected virtual IDictionary<string, FunctionSignatureGroup> CustomFunctions()
 		{
-			return new Dictionary<string, FunctionGroupDescriptor>();
+			return new Dictionary<string, FunctionSignatureGroup>();
 		}
 
 	}

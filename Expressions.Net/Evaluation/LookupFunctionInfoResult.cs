@@ -5,7 +5,7 @@ using Expressions.Net.Evaluation.IValueTypes;
 
 namespace Expressions.Net.Evaluation
 {
-	public class LookupFunctionInfoResult
+    public class LookupFunctionInfoResult
 	{
 		public LookupStatus Status { get; }
 

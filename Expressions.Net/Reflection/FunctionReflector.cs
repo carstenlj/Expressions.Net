@@ -1,11 +1,11 @@
-﻿using Expressions.Net.Assembly;
+﻿using Expressions.Net.Evaluation;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
 
-namespace Expressions.Net.Assemblies
+namespace Expressions.Net.Reflection
 {
-	public static class FunctionReflector
+    public static class FunctionReflector
 	{
 		public static Dictionary<string, MethodInfo> GetOperatorMethodInfo(Type typeContainingFunctions)
 		{
@@ -30,7 +30,7 @@ namespace Expressions.Net.Assemblies
 			}
 		}
 
-		public static void PopulateDictionaryWithFunctionDescriptors(Type typeContainingFunctions, Dictionary<string, FunctionGroupDescriptor> cache)
+		public static void PopulateDictionaryWithFunctionDescriptors(Type typeContainingFunctions, Dictionary<string, FunctionSignatureGroup> cache)
 		{
 			foreach (var methodInfo in typeContainingFunctions.GetMethods())
 			{
@@ -41,30 +41,24 @@ namespace Expressions.Net.Assemblies
 			}
 		}
 
-		internal static void PopulateFunctionCacheWith(FunctionDescriptor functionDescriptor, MethodInfo methodInfo, Dictionary<string, FunctionGroupDescriptor> cache)
+		internal static void PopulateFunctionCacheWith(ExpressionFunctionSignature functionDescriptor, MethodInfo methodInfo, Dictionary<string, FunctionSignatureGroup> cache)
 		{
 			if (!cache.TryGetValue(functionDescriptor.Alias, out var functionGroup))
 			{
-				functionGroup = new FunctionGroupDescriptor(functionDescriptor.Alias, methodInfo);
+				functionGroup = new FunctionSignatureGroup(methodInfo);
 				cache.Add(functionDescriptor.Alias, functionGroup);
 			}
 
 			if (functionGroup.MethodInfo != methodInfo)
 				throw new InvalidOperationException($"Cannot declare diffrent methods with the same function alias '{functionDescriptor.Alias}'");
 
-			functionGroup.Signatures.Add(new FunctionSignatureDescriptor(
-				name: functionDescriptor.Alias,
-				isGlobal: functionDescriptor.IsGlobal,
-				args: functionDescriptor.Args,
-				requiredArgsCount: functionDescriptor.RequiredArgsCount,
-				returnType: functionDescriptor.ReturnType
-			));
+			functionGroup.Signatures.Add(FunctionSignature.Create(functionDescriptor));
 		}
 
-		internal static IEnumerable<FunctionDescriptor> GetFunctionDescriptors(MethodInfo methodInfo)
+		internal static IEnumerable<ExpressionFunctionSignature> GetFunctionDescriptors(MethodInfo methodInfo)
 		{
 			foreach (var funcAttr in methodInfo.GetCustomAttributes<ExpressionFunctionAttribute>())
-				yield return FunctionDescriptor.Parse(funcAttr.Signature);
+				yield return ExpressionFunctionSignature.Parse(funcAttr.Signature);
 		}
 	}
 }

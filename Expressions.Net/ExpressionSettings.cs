@@ -4,8 +4,15 @@ using System.Globalization;
 
 namespace Expressions.Net
 {
-	internal class ExpressionSettings : IExpressionSettings
+	public class ExpressionSettings : IExpressionSettings
 	{
+		public static readonly IExpressionSettings Default = new ExpressionSettings(
+			formatProvider: CultureInfo.InvariantCulture,
+			unresolvableVariableHandling: MissingValueHandling.ReturnNull,
+			invalidValueHandling: InvalidValueHandling.Return
+		);
+
+		public bool CachingDisabled { get; set; }
 		public IFormatProvider FormatProvider { get; }
 		public MissingValueHandling MissingValueHandling { get; }
 		public InvalidValueHandling InvalidValueHandling { get; }

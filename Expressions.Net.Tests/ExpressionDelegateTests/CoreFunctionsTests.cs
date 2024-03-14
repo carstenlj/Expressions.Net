@@ -5,15 +5,15 @@ using Xunit;
 namespace Expressions.Net.Tests.ExpressionFunctionTests
 {
 	[Trait("ExpressionDelegate", "Theories")]
-	public class ExpressionFunctionTests : TestBase
+	public class CoreFunctionsTests : TestBase
 	{
-		[Theory(DisplayName = "Verify ")]
-		[ClassData(typeof(ExpressionFunctionTestSource))]
+		[Theory(DisplayName = "Verify signature ")]
+		[ClassData(typeof(CoreFunctionsTestSource))]
 		public void TestExpressionWithExpectedResult(string Expression, string Returns)
 		{
 			// Arrange
-			var expressionFunction = ExpresisonFactory.CreateDelegate(Expression);
-			var variables = ExpresisonFactory.CreateVariables(TestVariablesData, null);
+			var expressionFunction = ExpressionEngine.CompileExpressionToDelegate(Expression);
+			var variables = ExpressionEngine.CreateVariables(TestConstants.Variables, null);
 			
 			// Act
 			var returnValueType = ValueTypeConverter.ConvertToValueType(Returns);

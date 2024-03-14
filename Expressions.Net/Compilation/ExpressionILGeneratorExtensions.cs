@@ -1,6 +1,5 @@
 ﻿using Expressions.Net.Evaluation;
-using Expressions.Net.Tokenization.ITokens;
-using System;
+using Expressions.Net.Tokenization;
 using System.Reflection;
 using System.Reflection.Emit;
 
@@ -8,13 +7,13 @@ namespace Expressions.Net.Compilation
 {
 	internal static class ExpressionILGeneratorExtensions
 	{
-		public static bool EmitVariable(this ILGenerator methodIL, VariableToken variable)
+		public static bool EmitVariable(this ILGenerator methodIL, Token variable)
 		{
 			// Push the IVariables instance onto the stack
 			methodIL.Emit(OpCodes.Ldarg_0);
 
 			// Push the variable onto the stack
-			methodIL.Emit(OpCodes.Ldstr, variable.VariableName);
+			methodIL.Emit(OpCodes.Ldstr, variable.GetArgument);
 
 			// Call VarLookup (pops 2: this, variableName)
 			methodIL.Emit(OpCodes.Callvirt, FunctionsMethodInfo.VarLookup);
@@ -23,16 +22,17 @@ namespace Expressions.Net.Compilation
 			return true;
 		}
 
-		public static bool EmitNumberConstant(this ILGenerator methodIL, ConstantNumberToken constant)
+		public static bool EmitNumberConstant(this ILGenerator methodIL, Token constant)
 		{
 			// TODO: Introduce an ITokenConstantConverter shared between the Compiler and Tokenizer to handle conversion
 
 			// Return failure if the constant doesn't parse as a double
-			if (!constant.TryGetValue(out var value) || !value.IsNumber())
+			if (constant.ConstantValue is null || !constant.ConstantValue.IsNumber())
 				return false;
 
 			// Push the double onto the stack
-			methodIL.Emit(OpCodes.Ldc_R8, value.AsDouble());
+			// TODO: Push the constant directly onto the stack
+			methodIL.Emit(OpCodes.Ldc_R8, constant.ConstantValue.AsDouble());
 
 			// Call NumberValue to retrieve an IValue for the loaded constant
 			methodIL.Emit(OpCodes.Call, FunctionsMethodInfo.NumberValue);
@@ -41,10 +41,10 @@ namespace Expressions.Net.Compilation
 			return true;
 		}
 
-		public static bool EmitStringConstant(this ILGenerator methodIL, ConstantStringToken constant)
+		public static bool EmitStringConstant(this ILGenerator methodIL, Token constant)
 		{
 			// Push the string onto the stack
-			methodIL.Emit(OpCodes.Ldstr, constant.EscapedText);
+			methodIL.Emit(OpCodes.Ldstr, constant.ConstantValue?.AsString());
 
 			// Call StringValue to retrieve an IValue for the loaded constant
 			methodIL.Emit(OpCodes.Call, FunctionsMethodInfo.StringValue);
@@ -53,16 +53,16 @@ namespace Expressions.Net.Compilation
 			return true;
 		}
 
-		public static bool EmitBoolConstant(this ILGenerator methodIL, ConstantBooleanToken constant)
+		public static bool EmitBoolConstant(this ILGenerator methodIL, Token constant)
 		{
 			// TODO: Introduce an ITokenConstantConverter shared between the Compiler and Tokenizer to handle conversion
 
 			// Return failure if the constant doesn't parse as a bool
-			if (!constant.TryGetValue(out var value) || !value.IsBoolean())
+			if (constant.ConstantValue is null || !constant.ConstantValue.IsBoolean())
 				return false;
 
 			// Push the either 1 or 0 onto the stack
-			methodIL.Emit(value.AsBoolean() ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0);
+			methodIL.Emit((constant.ConstantValue?.AsBoolean() ?? false) ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0);
 
 			// Call BooleanValue to retrieve an IValue for the loaded constant
 			methodIL.Emit(OpCodes.Call, FunctionsMethodInfo.BooleanValue);
@@ -71,10 +71,10 @@ namespace Expressions.Net.Compilation
 			return true;
 		}
 
-		public static bool EmitGetterFunctionCall(this ILGenerator methodIL, GetterFunctionToken getterFunction)
+		public static bool EmitGetterFunctionCall(this ILGenerator methodIL, Token getterFunction)
 		{
 			// Push the string onto the stack
-			methodIL.Emit(OpCodes.Ldstr, getterFunction.PropertyName);
+			methodIL.Emit(OpCodes.Ldstr, getterFunction.GetArgument);
 
 			// Call Property to retrieve an IValue
 			methodIL.Emit(OpCodes.Call, FunctionsMethodInfo.Property);

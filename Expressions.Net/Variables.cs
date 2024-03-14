@@ -6,7 +6,7 @@ using System.Linq;
 
 namespace Expressions.Net
 {
-	public class Variables : IVariables
+	public sealed class Variables : IVariables
 	{
 		public string[] Keys => Data.Keys.ToArray();
 		public IDictionary<string, IValueType> Schema { get; }

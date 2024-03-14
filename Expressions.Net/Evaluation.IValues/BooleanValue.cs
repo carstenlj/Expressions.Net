@@ -2,7 +2,7 @@
 
 namespace Expressions.Net.Evaluation.IValues
 {
-	internal readonly struct BooleanValue : IValue
+	public readonly struct BooleanValue : IValue
 	{
 		public static readonly BooleanValue Empty = new BooleanValue(null);
 		public static readonly BooleanValue False = new BooleanValue(false);

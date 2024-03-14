@@ -1,5 +1,4 @@
 ﻿using Expressions.Net.Evaluation;
-using Expressions.Net.Tokenization.ITokens;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,8 +7,14 @@ using static Expressions.Net.Chars;
 
 namespace Expressions.Net.Tokenization
 {
-	internal sealed class Tokenizer : IExpressionTokenizer
+	public sealed class ExpressionTokenizer : IExpressionTokenizer
 	{
+		public static readonly IExpressionTokenizer Default = new ExpressionTokenizer(
+			stringTokenizer: StringTokenizer.Default,
+			keywordTokenizer: KeywordTokenizer.Default,
+			operatorProvider: OperatorProvider.Default
+		);
+
 		internal const string True = "true";
 		internal const string False = "false";
 
@@ -17,7 +22,7 @@ namespace Expressions.Net.Tokenization
 		private readonly IKeywordTokenizer _keywordTokenizer;
 		private readonly IOperatorProvider _operatorProvider;
 
-		public Tokenizer(IStringTokenizer stringTokenizer, IKeywordTokenizer keywordTokenizer, IOperatorProvider operatorProvider)
+		public ExpressionTokenizer(IStringTokenizer stringTokenizer, IKeywordTokenizer keywordTokenizer, IOperatorProvider operatorProvider)
 		{
 			_stringTokenizer = stringTokenizer;
 			_keywordTokenizer = keywordTokenizer;
@@ -26,7 +31,7 @@ namespace Expressions.Net.Tokenization
 
 		public TokenCollectionInfix Tokenize(ReadOnlySpan<char> expression)
 		{
-			var result = new HashSet<IToken>();
+			var result = new HashSet<Token>();
 			var previousTokenWasOperator = false;
 			var cursor = 0;
 
@@ -37,14 +42,14 @@ namespace Expressions.Net.Tokenization
 					break;
 
 				result.Add(token);
-				previousTokenWasOperator = token is OperatorToken operatorToken && !operatorToken.IsEndParenthesis();
-				cursor = token.StartIndex + token.Text.Length;
+				previousTokenWasOperator = token.TokenType == TokenType.Operator && !token.IsEndParenthesis();
+				cursor = token.StartIndex + token.TokenText.Length;
 			}
 
 			return new TokenCollectionInfix(result.ToList());
 		}
 
-		private IToken? ParseNextToken(ReadOnlySpan<char> expression, int cursor, bool previousTokenWasOperator)
+		private Token? ParseNextToken(ReadOnlySpan<char> expression, int cursor, bool previousTokenWasOperator)
 		{
 			// The current character assumed to be the beginning of a new token
 			var @char = NormalizeCharacter(expression[cursor]);
@@ -83,15 +88,15 @@ namespace Expressions.Net.Tokenization
 					return keywordToken;
 
 				// Handle global functions
-				if (@char == Operator.ParenthesisBegin.Char0)
+				if (@char == OperatorConstants.ParenthesisBegin.Char0)
 				{
-					return expression[cursor + 1] == Operator.ParenthesisEnd.Char0 // Is function call without arguments?
-						? new FunctionToken(expression.Slice(startIndex, ++cursor - startIndex + 1).Trim().ToString(), startIndex, true)
-						: new FunctionToken(expression[startIndex..cursor].Trim().ToString(), startIndex, true);
+					return expression[cursor + 1] == OperatorConstants.ParenthesisEnd.Char0 // Is function call without arguments?
+						? Token.CreateFunction(expression.Slice(startIndex, ++cursor - startIndex + 1).Trim().ToString(), startIndex, true)
+						: Token.CreateFunction(expression[startIndex..cursor].Trim().ToString(), startIndex, true);
 				}
 
 				// Return as a variable token
-				return new VariableToken(tokenText, startIndex, null);
+				return Token.CreateVariable(tokenText, startIndex, null);
 			}
 
 			// Check for numeric sequences
@@ -108,11 +113,11 @@ namespace Expressions.Net.Tokenization
 
 				if (cursor - startIndex == 1)
 				{
-					if (@char == Plus) return new OperatorToken(Operator.Add, startIndex);
-					if (@char == Minus) return new OperatorToken(Operator.Subtract, startIndex);
+					if (@char == Plus) return Token.CreateOperator(OperatorConstants.Add, startIndex);
+					if (@char == Minus) return Token.CreateOperator(OperatorConstants.Subtract, startIndex);
 				}
 
-				return new ConstantNumberToken(expression, startIndex, cursor - startIndex);
+				return Token.CreateConstanNumber(expression.Slice(startIndex, cursor - startIndex).ToString(), startIndex);
 			}
 
 			// Check for operators
@@ -124,7 +129,7 @@ namespace Expressions.Net.Tokenization
 					if ((!@operator.Char2.HasValue || cursor + 2 < expression.Length && @operator.Char2 == expression[cursor + 2]) &&
 						(!@operator.Char1.HasValue || cursor + 1 < expression.Length && @operator.Char1 == expression[cursor + 1]))
 					{
-						return new OperatorToken(@operator, cursor);
+						return Token.CreateOperator(@operator, cursor);
 					}
 				}
 
@@ -148,7 +153,7 @@ namespace Expressions.Net.Tokenization
 			return true;
 		}
 
-		private static IToken ParseDotPrefixedToken(ReadOnlySpan<char> expression, int startIndex, int cursor, char @char)
+		private static Token ParseDotPrefixedToken(ReadOnlySpan<char> expression, int startIndex, int cursor, char @char)
 		{
 			// Handle if last character of the expression
 			if (cursor + 1 >= expression.Length)
@@ -160,16 +165,16 @@ namespace Expressions.Net.Tokenization
 
 			// Special case: Handle non-zero-prefixed decimal notaton (eg '.42' over '0.42');
 			if (IsNumberCharacter(expression[startIndex + 1]))
-				return new ConstantNumberToken(expression, startIndex, cursor - startIndex);
+				return Token.CreateConstanNumber(expression[startIndex..cursor].ToString(), startIndex);
 
 			// Handle sub-variable getter functions
-			if (@char != Operator.ParenthesisBegin.Char0)
-				return new GetterFunctionToken(expression, startIndex, cursor - startIndex);
+			if (@char != OperatorConstants.ParenthesisBegin.Char0)
+				return Token.CreateObjectAccessor(expression[startIndex..cursor].ToString(), startIndex);
 
 			// Handle function call
-			return expression[cursor + 1] == Operator.ParenthesisEnd.Char0 // Is function call without arguments?
-				? new FunctionToken(expression.Slice(startIndex, ++cursor - startIndex + 1).ToString(), startIndex, false)
-				: new FunctionToken(expression.Slice(startIndex, cursor - startIndex).ToString(), startIndex, false);
+			return expression[cursor + 1] == OperatorConstants.ParenthesisEnd.Char0 // Is function call without arguments?
+				? Token.CreateFunction(expression.Slice(startIndex, ++cursor - startIndex + 1).ToString(), startIndex, false)
+				: Token.CreateFunction(expression.Slice(startIndex, cursor - startIndex).ToString(), startIndex, false);
 		}
 
 

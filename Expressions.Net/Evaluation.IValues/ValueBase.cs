@@ -1,6 +1,6 @@
 ﻿namespace Expressions.Net.Evaluation.IValues
 {
-	internal abstract class ValueBase : IValue
+	public abstract class ValueBase : IValue
 	{
 		public const string NullString = "[null]";
 

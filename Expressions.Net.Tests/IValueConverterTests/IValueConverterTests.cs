@@ -1,4 +1,5 @@
 ﻿using Expressions.Net.Evaluation;
+using System.Collections.Generic;
 using Xunit;
 
 namespace Expressions.Net.Tests.IValueConverterTests
@@ -95,7 +96,7 @@ namespace Expressions.Net.Tests.IValueConverterTests
 		[Fact(DisplayName = "Can convert to IList<IValue> from string[]")]
 		public void Test06()
 		{
-			var result = Converter.ConvertToArray(new string[] { "hello", "world" }, ExpresisonFactory.GetStringType());
+			var result = Converter.ConvertToArray(new string[] { "hello", "world" }, ExpressionEngine.GetStringType());
 
 			Assert.Equal(2, result?.Count);
 			Assert.Equal(ValueRootType.String, result?[0].Type.RootType);

@@ -11,7 +11,7 @@ namespace Expressions.Net.Evaluation.IValueTypes
 		public static readonly AmbiguousValueType Any = new AmbiguousValueType(false, null);
 		public static readonly AmbiguousValueType T = new AmbiguousValueType(true, null);
 
-		public ValueRootType RootType => ValueRootType.Invalid;
+		public ValueRootType RootType { get; } = ValueRootType.Invalid;
 		public IValueType[]? PossibleTypes { get; private set; }
 		public bool IsAny => PossibleTypes == null;
 		private bool IsItemType { get; }

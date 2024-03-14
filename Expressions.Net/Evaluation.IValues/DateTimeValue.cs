@@ -4,7 +4,7 @@ using System.Globalization;
 
 namespace Expressions.Net.Evaluation.IValues
 {
-	internal readonly struct DateTimeValue : IValue
+	public readonly struct DateTimeValue : IValue
 	{
 		public static DateTimeValue UtcNow => new DateTimeValue(DateTime.UtcNow);
 

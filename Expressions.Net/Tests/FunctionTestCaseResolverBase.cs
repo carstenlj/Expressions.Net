@@ -1,30 +1,37 @@
 ﻿using Expressions.Net.Evaluation;
+using System;
 using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 
-namespace Expressions.Net.Tests.ExpressionFunctionTests
+namespace Expressions.Net.Tests
 {
-	/// <summary>
-	/// All test cases for the <see cref="ExpressionDelegate"/> theory
-	/// </summary>
-	internal class ExpressionFunctionTestSource : IEnumerable<object[]>
+    /// <summary>
+    /// All test cases for the <see cref="ExpressionDelegate"/> theory
+    /// </summary>
+    public abstract partial class FunctionTestCaseResolverBase : IEnumerable<object[]>
 	{
-		protected virtual FunctionsProvider FunctionsProvider => FunctionsProvider.Default;
+		public FunctionsProvider FunctionsProvider { get; }
 
-		public record TestCase(string Expression, IValueType Returns);
+		protected FunctionTestCaseResolverBase(FunctionsProvider functionsProvider)
+		{
+			FunctionsProvider = functionsProvider;
+		}
 
 		IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 		public IEnumerator<object[]> GetEnumerator()
 		{
-			foreach (var testCase in FunctionsProvider.FunctionsCache
+			var functionsCache = FunctionsProvider.FunctionsCache;
+			foreach (var testCase in functionsCache
 				.SelectMany(x => x.Value.Signatures)
 				.SelectMany(GetAllTestCasesForSignature)
-				.Select(x => new object[] { x.Expression, x.Returns.ToString() }))
+				.Select(x => new object[] { x.Expression, x.Returns.ToString() ?? string.Empty }))
 			{
 				yield return testCase;
 			}
 		}
 
-		public static IEnumerable<TestCase> GetAllTestCasesForSignature(FunctionSignature signature)
+		public static IEnumerable<FunctionReturnTypeTestCase> GetAllTestCasesForSignature(FunctionSignature signature)
 		{
 			if (signature.Name == "Switch" || signature.Name == "Switch1")
 				yield break;
@@ -48,9 +55,9 @@ namespace Expressions.Net.Tests.ExpressionFunctionTests
 
 		}
 
-		private static IEnumerable<TestCase> CreateArrayTestCases(FunctionSignature signature, IEnumerable<IValueType> args)
+		private static IEnumerable<FunctionReturnTypeTestCase> CreateArrayTestCases(FunctionSignature signature, IEnumerable<IValueType> args)
 		{
-			var testCases = new List<TestCase>();
+			var testCases = new List<FunctionReturnTypeTestCase>();
 			var arrayItemTypes = new IValueType[] {
 				IValueType.GetStringType(),
 				IValueType.GetNumberType(),
@@ -80,11 +87,11 @@ namespace Expressions.Net.Tests.ExpressionFunctionTests
 			}
 		}
 
-		public static TestCase CreateTestCase(string functionName, bool isGlobal, IEnumerable<IValueType> args, IValueType returnType)
+		public static FunctionReturnTypeTestCase CreateTestCase(string functionName, bool isGlobal, IEnumerable<IValueType> args, IValueType returnType)
 		{
 			return isGlobal
-				? new TestCase($"{functionName}({string.Join(", ", args.Select(GetTokenString))})", returnType)
-				: new TestCase($"{GetTokenString(args.First())}.{functionName}({string.Join(", ", args.Skip(1).Select(GetTokenString))})", returnType);
+				? new FunctionReturnTypeTestCase($"{functionName}({string.Join(", ", args.Select(GetTokenString))})", returnType)
+				: new FunctionReturnTypeTestCase($"{GetTokenString(args.First())}.{functionName}({string.Join(", ", args.Skip(1).Select(GetTokenString))})", returnType);
 		}
 
 		private static string GetTokenString(IValueType type)
@@ -165,13 +172,13 @@ namespace Expressions.Net.Tests.ExpressionFunctionTests
 				else if (type.IsAny())
 				{
 					result.AddRange(new IValueType[] {
-				IValueType.GetStringType(),
-				IValueType.GetNumberType(),
-				IValueType.GetBooleanType(),
-				IValueType.GetDateTimeType(),
-				IValueType.GetAnyArrayType(),
-				IValueType.GetAnyObjectType()
-			});
+						IValueType.GetStringType(),
+						IValueType.GetNumberType(),
+						IValueType.GetBooleanType(),
+						IValueType.GetDateTimeType(),
+						IValueType.GetAnyArrayType(),
+						IValueType.GetAnyObjectType()
+					});
 				}
 				else if (type.IsAnyArray())
 				{

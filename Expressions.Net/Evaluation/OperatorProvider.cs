@@ -1,5 +1,4 @@
-﻿using Expressions.Net.Assemblies;
-using Expressions.Net.Evaluation.Functions;
+﻿using Expressions.Net.Evaluation.Functions;
 using Expressions.Net.Tokenization;
 using System;
 using System.Collections.Generic;
@@ -9,7 +8,7 @@ using System.Reflection;
 
 namespace Expressions.Net.Evaluation
 {
-	internal class OperatorProvider : IOperatorProvider
+	public class OperatorProvider : IOperatorProvider
 	{
 		public static readonly OperatorProvider Default = new OperatorProvider();
 
@@ -17,18 +16,13 @@ namespace Expressions.Net.Evaluation
 
 		private IDictionary<string, Operator> _keywordLookup;
 		private IDictionary<char, Operator[]> arithmeticLookup;
-		private IDictionary<string, MethodInfo> _methodInfos;
 
 		public OperatorProvider()
 		{
 			// TODO: Ensure operators cannot start with "_". This is because the tokenizer will lookup keywords that have alphanum or underscore
 			var customOperators = CustomOperators();
 
-			_methodInfos = UseCoreOperators ? FunctionReflector.GetOperatorMethodInfo(typeof(OperatorFunctions)) : new Dictionary<string, MethodInfo>(StringComparer.OrdinalIgnoreCase);
-			foreach (var customOperator in customOperators)
-				_methodInfos.Add(customOperator.ToString(), customOperator.MethodInfo);
-
-			var allOperators = UseCoreOperators ? new List<Operator>(Operator.AllCoreOperators) :  new List<Operator>();
+			var allOperators = UseCoreOperators ? new List<Operator>(OperatorConstants.AllCoreOperators) :  new List<Operator>();
 			allOperators.AddRange(customOperators);
 
 			// Group all non arithmeic operators so they can be efficiently looked up as keywords
@@ -46,11 +40,62 @@ namespace Expressions.Net.Evaluation
 
 		protected virtual IEnumerable<Operator> CustomOperators() => new List<Operator>();
 
-		public MethodInfo? LookupOperatorMethodInfo(string @operator)
+		public MethodInfo? LookupOperatorMethodInfo(int hashcode)
 		{
-			if (_methodInfos.TryGetValue(@operator, out var methodInfo))
-				return methodInfo;
+			return hashcode switch
+			{
+				// Not
+				538160 => OperatorMethodInfo.Not,
 
+				// Divide
+				551614 => OperatorMethodInfo.Divide,
+
+				//Modulus
+				542004 => OperatorMethodInfo.Modulus,
+
+				// Multiply
+				546809 => OperatorMethodInfo.Multiply,
+
+				// Add
+				547770 => OperatorMethodInfo.Add,
+
+				// Subtract
+				549692 => OperatorMethodInfo.Subtract,
+
+				// GreaterThan
+				566029 => OperatorMethodInfo.GreaterThan,
+
+				// GreaterThanOrEqual
+				567920 => OperatorMethodInfo.GreaterThanOrEqual,
+
+				// LessThanOrEqual:
+				565998 => OperatorMethodInfo.LessThanOrEqual,
+
+				// LessThan
+				564107 => OperatorMethodInfo.LessThan,
+
+				// Equal
+				566959 => OperatorMethodInfo.Equal,
+
+				// NotEqual
+				540051 => OperatorMethodInfo.NotEqual,
+
+				// And
+				544143 => OperatorMethodInfo.And,
+
+				// Coalesce
+				568943 => OperatorMethodInfo.Coalesce,
+
+				// Or
+				629455 => OperatorMethodInfo.Or,
+
+				// Other operators
+				_ => LookupCustomOperatorMethodInfo(hashcode),
+			};
+		}
+
+		protected virtual MethodInfo? LookupCustomOperatorMethodInfo(int hashcode)
+		{
 			return null;
 		}
 
@@ -72,6 +117,24 @@ namespace Expressions.Net.Evaluation
 				matchingOperators = null;
 
 			return matchingOperators != null;
+		}
+
+		private bool Test(char char0, ReadOnlySpan<char> expression, int cursor, [NotNullWhen(true)] out Operator? result)
+		{
+			result = null;
+			if (!arithmeticLookup.TryGetValue(char0, out var lookupResult))
+				return false;
+
+			foreach (var @operator in lookupResult)
+			{
+				if ((!@operator.Char2.HasValue || cursor + 2 < expression.Length && @operator.Char2 == expression[cursor + 2]) &&
+					(!@operator.Char1.HasValue || cursor + 1 < expression.Length && @operator.Char1 == expression[cursor + 1]))
+				{
+					result = @operator;
+				}
+			}
+
+			return result != null;
 		}
 	}
 }

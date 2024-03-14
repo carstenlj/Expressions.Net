@@ -1,20 +1,27 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Expressions.Net.Compilation;
+using Expressions.Net.Conversion;
+using Expressions.Net.Evaluation;
+using Expressions.Net.Tokenization;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Expressions.Net.DependencyInjection
 {
 	public static class ExpressionServiceCollectionExtensions
 	{
-		public static IServiceCollection AddExpressions(this IServiceCollection services)
+		public static IServiceCollection AddExpressionEngine(this IServiceCollection services)
 		{
-			// Add settings
-			services.AddSingleton(typeof(IExpressionSettings), ExpressionServiceImplementations.GetDefaultValueConverterSettings());
-
-			// Add services
-			var implementations = ExpressionServiceImplementations.GetDefaults();
-			foreach (var implementation in implementations)
-				services.AddSingleton(implementation.Key, implementation.Value);
-
-			return services;
+			return services
+				.AddSingleton(typeof(IExpressionSettings), ExpressionSettings.CreateDefault())
+				.AddSingleton<IValueConverter, ValueConverter>()
+				.AddSingleton<IValueTypeConverter, ValueTypeConverter>()
+				.AddSingleton<IFunctionsProvider, FunctionsProvider>()
+				.AddSingleton<IOperatorProvider, OperatorProvider>()
+				.AddSingleton<IExpressionEngine, ExpressionEngine>()
+				.AddSingleton<IExpressionCompiler, ExpressionILCompiler>()
+				.AddSingleton<IExpressionTokenizer, ExpressionTokenizer>()
+				.AddSingleton<IExpressionCache, ExpressionCache>()
+				.AddSingleton<IStringTokenizer, StringTokenizer>()
+				.AddSingleton<IKeywordTokenizer, KeywordTokenizer>();
 		}
 	}
 }

@@ -7,8 +7,13 @@ using System.Reflection;
 
 namespace Expressions.Net.Conversion
 {
-	internal sealed class ValueConverter : IValueConverter
+	public sealed class ValueConverter : IValueConverter
 	{
+		public static readonly IValueConverter Default = new ValueConverter(
+			typeConverter: new ValueTypeConverter(),
+			settings: ExpressionSettings.Default
+		);
+
 		private IExpressionSettings Settings { get; }
 		public IValueTypeConverter TypeConverter { get; }
 

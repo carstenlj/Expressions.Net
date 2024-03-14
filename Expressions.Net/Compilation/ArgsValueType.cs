@@ -7,25 +7,17 @@ namespace Expressions.Net.Compilation
 {
 	internal sealed class ArgsValueType : IValueType
 	{
-		public ValueRootType RootType => ValueRootType.Invalid;
-		public IEnumerable<IValueType> ArgumentTypes { get; set; }
+		public ValueRootType RootType { get; } = ValueRootType.Invalid;
+		public IEnumerable<IValueType> ArgumentTypes { get; }
 
 		public ArgsValueType(IValueType[] types)
 		{
 			ArgumentTypes = GetTypes(types);
 		}
 
-		public IValue CreateDefaultValue() => throw new NotSupportedException();
-
-		public IValue CreateNullValue() => throw new NotSupportedException();
-
-		public IValue CreateValue(object? data, IValueConverter valueConverter) => throw new NotSupportedException();
-
-		Type IValueType.ConvertToType(IValueTypeConverter typeConverter) => throw new NotSupportedException();
-
 		public static IEnumerable<IValueType> GetTypes(IValueType[] types)
 		{
-			foreach(var type in types)
+			foreach (var type in types)
 			{
 				if (type is ArgsValueType args)
 				{
@@ -38,5 +30,11 @@ namespace Expressions.Net.Compilation
 				}
 			}
 		}
+
+		public IValue CreateDefaultValue() => throw new NotSupportedException();
+		public IValue CreateNullValue() => throw new NotSupportedException();
+		public IValue CreateValue(object? data, IValueConverter valueConverter) => throw new NotSupportedException();
+		Type IValueType.ConvertToType(IValueTypeConverter typeConverter) => throw new NotSupportedException();
+
 	}
 }

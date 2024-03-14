@@ -8,7 +8,7 @@ using System.Reflection.Emit;
 
 namespace Expressions.Net.Conversion
 {
-	internal sealed class ValueTypeConverter : IValueTypeConverter
+	public sealed class ValueTypeConverter : IValueTypeConverter
 	{
 		public static readonly ValueTypeConverter Default = new ValueTypeConverter();
 

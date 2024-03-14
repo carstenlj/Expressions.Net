@@ -1,7 +1,9 @@
 ﻿using Expressions.Net.Evaluation;
 using Expressions.Net.Evaluation.Functions;
+using Expressions.Net.Tokenization;
 using Microsoft.Extensions.DependencyInjection;
 using System.Collections;
+using System.Collections.Generic;
 using System.Reflection;
 using Xunit;
 
@@ -22,7 +24,7 @@ namespace Expressions.Net.Tests.IExpressionTokenizerTests
 		public void TokenizeTest02()
 		{
 			var result = TokenizeTypeNames("myvar.myprop.Length()");
-			Assert.Equal(new[] { Token.Var, Token.Prop, Token.Func }, result);
+			Assert.Equal(new[] { Token.Var, Token.Prop, Token.FuncObj }, result);
 		}
 
 		//[Fact(DisplayName = "Can tokenize function with whitespace before arguments")]
@@ -52,13 +54,14 @@ namespace Expressions.Net.Tests.IExpressionTokenizerTests
 
 	public static class Token
 	{
-		public const string Bool = "ConstantBooleanToken";
-		public const string Num = "ConstantNumberToken";
-		public const string Str = "ConstantStringToken";
-		public const string Func = "FunctionToken";
-		public const string Prop = "GetterFunctionToken";
-		public const string Inv = "InvalidToken";
-		public const string Op = "OperatorToken";
-		public const string Var = "VariableToken";
+		public const string Bool = nameof(TokenType.ConstantBoolean);
+		public const string Num = nameof(TokenType.ConstantNumber);
+		public const string Str = nameof(TokenType.ConstantString);
+		public const string FuncObj = nameof(TokenType.ObjectFunction);
+		public const string FuncGlobl = nameof(TokenType.GlobalFunction);
+		public const string Prop = nameof(TokenType.ObjectAccessor);
+		public const string Inv = nameof(TokenType.Invalid);
+		public const string Op = nameof(TokenType.Operator);
+		public const string Var = nameof(TokenType.VariableToken);
 	}
 }

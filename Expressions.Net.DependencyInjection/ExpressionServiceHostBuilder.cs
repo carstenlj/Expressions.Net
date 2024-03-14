@@ -12,7 +12,7 @@ namespace Expressions.Net.DependencyInjection
 
 		private static void AddServices(IServiceCollection services)
 		{
-			services.AddExpressions();
+			services.AddExpressionEngine();
 		}
 	}
 }

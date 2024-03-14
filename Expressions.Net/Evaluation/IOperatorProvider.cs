@@ -6,7 +6,7 @@ namespace Expressions.Net.Evaluation
 {
 	public interface IOperatorProvider
 	{		
-		MethodInfo? LookupOperatorMethodInfo(string @operator);
+		MethodInfo? LookupOperatorMethodInfo(int hashcode);
 		bool TryGetNonArithmeticOperator(string operatorText, [NotNullWhen(true)] out Operator? @operator);
 		bool TryGetArithmeticOperatorsStartingWith(char @char, [NotNullWhen(true)] out Operator[]? matchingOperators);
 	}

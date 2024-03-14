@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using static Expressions.Net.Chars;
+﻿using static Expressions.Net.Chars;
 
 namespace Expressions.Net
 {

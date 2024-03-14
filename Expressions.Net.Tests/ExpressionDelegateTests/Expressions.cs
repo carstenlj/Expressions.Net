@@ -1,5 +1,4 @@
-﻿using System.Collections;
-using Xunit;
+﻿using Xunit;
 
 namespace Expressions.Net.Tests
 {
@@ -17,8 +16,8 @@ namespace Expressions.Net.Tests
 		public void TestExpressionWithExprectedResult(string expr, object? expected)
 		{
 			// Arrange
-			var expressionFunction = ExpresisonFactory.CreateDelegate(expr);
-			var variables = ExpresisonFactory.CreateVariables(TestVariablesData, null);
+			var expressionFunction = ExpressionEngine.CompileExpressionToDelegate(expr);
+			var variables = ExpressionEngine.CreateVariables(TestConstants.Variables, null);
 
 			// Act
 			var result = expressionFunction(variables);

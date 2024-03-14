@@ -1,6 +1,6 @@
 ﻿namespace Expressions.Net
 {
-	internal static class Chars
+	public static class Chars
 	{
 		public const char Backslash = '\\';
 		public const char SingleQuote = '\'';

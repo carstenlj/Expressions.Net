@@ -1,11 +1,10 @@
-﻿using Expressions.Net.Tokenization.ITokens;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace Expressions.Net.Tokenization
 {
-	internal sealed class StringTokenizer : IStringTokenizer
+	public sealed class StringTokenizer : IStringTokenizer
 	{
 		public static readonly StringTokenizer Default = new StringTokenizer();
 
@@ -18,7 +17,7 @@ namespace Expressions.Net.Tokenization
 			_useBackslashEscaping = true;
 		}
 
-		public ConstantStringToken ParseQuotedStringToken(ReadOnlySpan<char> expression, int cursor, char @char)
+		public Token ParseQuotedStringToken(ReadOnlySpan<char> expression, int cursor, char @char)
 		{
 			var quoteChar = @char;
 			var cursorStart = cursor;
@@ -58,7 +57,7 @@ namespace Expressions.Net.Tokenization
 			}
 
 			// Return the constant token
-			return new ConstantStringToken(expression, cursorStart, cursor - cursorStart + 1, escapedIndices?.ToArray());
+			return Token.CreateConstantString(expression, cursorStart, cursor - cursorStart + 1, escapedIndices?.ToArray());
 		}
 	}
 }
