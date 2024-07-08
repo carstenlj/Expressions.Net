@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 namespace Expressions.Net.Compilation
 {
-	internal sealed class ArgsValueType : IValueType
+	public sealed class ArgsValueType : IValueType
 	{
 		public ValueRootType RootType { get; } = ValueRootType.Invalid;
 		public IEnumerable<IValueType> ArgumentTypes { get; }
