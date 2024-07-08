@@ -3,6 +3,13 @@
 	<PropertyGroup>
 		<TargetFramework>net6.0</TargetFramework>
 		<Nullable>enable</Nullable>
+		<Authors>Carsten L. Jørgensen</Authors>
+		<RepositoryUrl>https://github.com/carstenlj/Expressions.Net</RepositoryUrl>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<Description>A library for parsing and evaluating custom code expressions</Description>
+		<PackageId>Expressions.Net</PackageId>
+		<Version>1.0.0-alpha240314</Version>
+		<PackageVersion>1.0.0-alpha240314</PackageVersion>
 	</PropertyGroup>
 
 	<ItemGroup>
